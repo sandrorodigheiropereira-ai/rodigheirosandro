@@ -1,21 +1,28 @@
 import { useState, useMemo } from 'react';
 import { DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
-import { mockFinancialData } from '@/data/mockData';
 import { calcMetrics, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
 import { RankingPanel } from '@/components/RankingPanel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getRegionais } from '@/data/mockData';
+import { useSheetData, getRegionaisFromData } from '@/hooks/useSheetData';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const PIE_COLORS = ['hsl(162 72% 46%)', 'hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
 
 export default function RegionalDashboard() {
-  const [regional, setRegional] = useState('Tocantins');
-  const regionais = getRegionais();
+  const { data: sheetData, isLoading, error } = useSheetData();
+  const allRecords = sheetData?.data || [];
+  const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
+  const [regional, setRegional] = useState('');
 
-  const filtered = useMemo(() => mockFinancialData.filter(r => r.regional === regional), [regional]);
+  // Set default regional when data loads
+  useMemo(() => {
+    if (regionais.length > 0 && !regional) setRegional(regionais[0]);
+  }, [regionais]);
+
+  const filtered = useMemo(() => allRecords.filter(r => r.regional === regional), [regional, allRecords]);
   const metrics = calcMetrics(filtered);
   const ranking = rankUnidades(filtered);
 
@@ -40,6 +47,26 @@ export default function RegionalDashboard() {
       { name: 'Impostos', value: imp },
     ];
   }, [filtered]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+        </div>
+        <Skeleton className="h-80" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-destructive font-semibold">Erro ao carregar dados: {(error as Error).message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,20 +1,36 @@
 import { useState, useMemo } from 'react';
 import { DollarSign, ShoppingCart, Users, TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
-import { mockFinancialData } from '@/data/mockData';
 import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getUnidades, getRegionais } from '@/data/mockData';
+import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UnidadeDashboard() {
-  const [regional, setRegional] = useState('Tocantins');
-  const [unidade, setUnidade] = useState('Palmas Centro');
-  const regionais = getRegionais();
-  const unidades = getUnidades(regional);
+  const { data: sheetData, isLoading, error } = useSheetData();
+  const allRecords = sheetData?.data || [];
+  const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
+  const [regional, setRegional] = useState('');
+  const [unidade, setUnidade] = useState('');
 
-  const filtered = useMemo(() => mockFinancialData.filter(r => r.unidade === unidade), [unidade]);
+  const unidades = useMemo(() => getUnidadesFromData(allRecords, regional), [allRecords, regional]);
+
+  // Set defaults when data loads
+  useMemo(() => {
+    if (regionais.length > 0 && !regional) {
+      setRegional(regionais[0]);
+    }
+  }, [regionais]);
+
+  useMemo(() => {
+    if (unidades.length > 0 && (!unidade || !unidades.includes(unidade))) {
+      setUnidade(unidades[0]);
+    }
+  }, [unidades]);
+
+  const filtered = useMemo(() => allRecords.filter(r => r.unidade === unidade), [unidade, allRecords]);
   const metrics = calcMetrics(filtered);
 
   const monthlyData = useMemo(() => {
@@ -25,6 +41,26 @@ export default function UnidadeDashboard() {
     });
   }, [filtered]);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+        </div>
+        <Skeleton className="h-80" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-destructive font-semibold">Erro ao carregar dados: {(error as Error).message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -33,7 +69,7 @@ export default function UnidadeDashboard() {
           <p className="text-sm text-muted-foreground">Análise detalhada da unidade</p>
         </div>
         <div className="flex gap-3">
-          <Select value={regional} onValueChange={(v) => { setRegional(v); setUnidade(getUnidades(v)[0]); }}>
+          <Select value={regional} onValueChange={(v) => { setRegional(v); const u = getUnidadesFromData(allRecords, v); setUnidade(u[0] || ''); }}>
             <SelectTrigger className="w-[160px] bg-secondary border-border"><SelectValue /></SelectTrigger>
             <SelectContent>
               {regionais.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
