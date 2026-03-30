@@ -4,31 +4,35 @@ import { KpiCard } from '@/components/KpiCard';
 import { FiltersBar } from '@/components/FiltersBar';
 import { AlertsPanel } from '@/components/AlertsPanel';
 import { RankingPanel } from '@/components/RankingPanel';
-import { mockFinancialData } from '@/data/mockData';
 import { calcMetrics, generateAlerts, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
+import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ConsolidadoDashboard() {
   const [periodo, setPeriodo] = useState('all');
   const [regional, setRegional] = useState('all');
   const [unidade, setUnidade] = useState('all');
 
+  const { data: sheetData, isLoading, error } = useSheetData();
+  const allRecords = sheetData?.data || [];
+
   const filtered = useMemo(() => {
-    let data = mockFinancialData;
+    let data = allRecords;
     if (periodo !== 'all') data = data.filter(r => r.data === periodo);
     if (regional !== 'all') data = data.filter(r => r.regional === regional);
     if (unidade !== 'all') data = data.filter(r => r.unidade === unidade);
     return data;
-  }, [periodo, regional, unidade]);
+  }, [periodo, regional, unidade, allRecords]);
 
-  const meses = [...new Set(mockFinancialData.map(r => r.data))].sort();
+  const meses = useMemo(() => [...new Set(allRecords.map(r => r.data))].sort(), [allRecords]);
   const currentMonth = periodo !== 'all' ? periodo : meses[meses.length - 1];
   const currentIdx = meses.indexOf(currentMonth);
   const prevMonth = currentIdx > 0 ? meses[currentIdx - 1] : undefined;
 
   const currentData = filtered.filter(r => periodo === 'all' || r.data === currentMonth);
-  const prevData = prevMonth ? mockFinancialData.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade === 'all' || r.unidade === unidade)) : undefined;
+  const prevData = prevMonth ? allRecords.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade === 'all' || r.unidade === unidade)) : undefined;
 
   const metrics = calcMetrics(currentData, prevData);
   const alerts = generateAlerts(filtered);
@@ -51,15 +55,39 @@ export default function ConsolidadoDashboard() {
     }));
   }, [filtered]);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
+        </div>
+        <Skeleton className="h-80" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-2">
+          <p className="text-destructive font-semibold">Erro ao carregar dados</p>
+          <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold">Dashboard Consolidado</h1>
-          <p className="text-sm text-muted-foreground">Visão geral de todas as regionais</p>
+          <p className="text-sm text-muted-foreground">Visão geral de todas as regionais • Dados do Google Sheets</p>
         </div>
         <FiltersBar periodo={periodo} regional={regional} unidade={unidade}
-          onPeriodoChange={setPeriodo} onRegionalChange={setRegional} onUnidadeChange={setUnidade} />
+          onPeriodoChange={setPeriodo} onRegionalChange={setRegional} onUnidadeChange={setUnidade}
+          records={allRecords} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

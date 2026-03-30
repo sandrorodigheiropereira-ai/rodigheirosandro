@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getRegionais, getUnidades } from '@/data/mockData';
-import { mockFinancialData } from '@/data/mockData';
+import { FinancialRecord } from '@/types/financial';
+import { useMemo } from 'react';
+import { getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
 
 interface FiltersBarProps {
   periodo: string;
@@ -9,12 +10,13 @@ interface FiltersBarProps {
   onPeriodoChange: (v: string) => void;
   onRegionalChange: (v: string) => void;
   onUnidadeChange: (v: string) => void;
+  records: FinancialRecord[];
 }
 
-export function FiltersBar({ periodo, regional, unidade, onPeriodoChange, onRegionalChange, onUnidadeChange }: FiltersBarProps) {
-  const meses = [...new Set(mockFinancialData.map(r => r.data))].sort();
-  const regionais = getRegionais();
-  const unidades = getUnidades(regional === 'all' ? undefined : regional);
+export function FiltersBar({ periodo, regional, unidade, onPeriodoChange, onRegionalChange, onUnidadeChange, records }: FiltersBarProps) {
+  const meses = useMemo(() => [...new Set(records.map(r => r.data))].sort(), [records]);
+  const regionais = useMemo(() => getRegionaisFromData(records), [records]);
+  const unidades = useMemo(() => getUnidadesFromData(records, regional === 'all' ? undefined : regional), [records, regional]);
 
   return (
     <div className="flex flex-wrap items-center gap-3">
