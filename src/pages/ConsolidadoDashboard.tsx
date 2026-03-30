@@ -1,0 +1,112 @@
+import { useState, useMemo } from 'react';
+import { DollarSign, TrendingUp, Percent, BarChart3 } from 'lucide-react';
+import { KpiCard } from '@/components/KpiCard';
+import { FiltersBar } from '@/components/FiltersBar';
+import { AlertsPanel } from '@/components/AlertsPanel';
+import { RankingPanel } from '@/components/RankingPanel';
+import { mockFinancialData } from '@/data/mockData';
+import { calcMetrics, generateAlerts, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { motion } from 'framer-motion';
+
+export default function ConsolidadoDashboard() {
+  const [periodo, setPeriodo] = useState('all');
+  const [regional, setRegional] = useState('all');
+  const [unidade, setUnidade] = useState('all');
+
+  const filtered = useMemo(() => {
+    let data = mockFinancialData;
+    if (periodo !== 'all') data = data.filter(r => r.data === periodo);
+    if (regional !== 'all') data = data.filter(r => r.regional === regional);
+    if (unidade !== 'all') data = data.filter(r => r.unidade === unidade);
+    return data;
+  }, [periodo, regional, unidade]);
+
+  const meses = [...new Set(mockFinancialData.map(r => r.data))].sort();
+  const currentMonth = periodo !== 'all' ? periodo : meses[meses.length - 1];
+  const currentIdx = meses.indexOf(currentMonth);
+  const prevMonth = currentIdx > 0 ? meses[currentIdx - 1] : undefined;
+
+  const currentData = filtered.filter(r => periodo === 'all' || r.data === currentMonth);
+  const prevData = prevMonth ? mockFinancialData.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade === 'all' || r.unidade === unidade)) : undefined;
+
+  const metrics = calcMetrics(currentData, prevData);
+  const alerts = generateAlerts(filtered);
+  const ranking = rankUnidades(filtered);
+
+  const monthlyData = useMemo(() => {
+    const byMonth = groupBy(filtered, 'data');
+    return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
+      const m = calcMetrics(recs);
+      return { mes: month, receita: m.receitaBruta, ebitda: m.ebitda, margem: m.margemEbitda };
+    });
+  }, [filtered]);
+
+  const regionalData = useMemo(() => {
+    const byRegional = groupBy(filtered, 'regional');
+    return Object.entries(byRegional).map(([name, recs]) => ({
+      regional: name,
+      receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
+      ebitda: calcMetrics(recs).ebitda,
+    }));
+  }, [filtered]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-display font-bold">Dashboard Consolidado</h1>
+          <p className="text-sm text-muted-foreground">Visão geral de todas as regionais</p>
+        </div>
+        <FiltersBar periodo={periodo} regional={regional} unidade={unidade}
+          onPeriodoChange={setPeriodo} onRegionalChange={setRegional} onUnidadeChange={setUnidade} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" change={metrics.crescimentoMensal} icon={<DollarSign className="w-5 h-5" />} delay={0} />
+        <KpiCard title="EBITDA" value={metrics.ebitda} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
+        <KpiCard title="Margem EBITDA" value={metrics.margemEbitda} format="percent" icon={<Percent className="w-5 h-5" />} delay={0.2} />
+        <KpiCard title="Crescimento Mensal" value={metrics.crescimentoMensal} format="percent" icon={<BarChart3 className="w-5 h-5" />} delay={0.3} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="lg:col-span-2 glass-card rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Evolução Mensal</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+              <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+                formatter={(v: number) => formatCurrency(v)} />
+              <Legend />
+              <Line type="monotone" dataKey="receita" name="Receita" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </motion.div>
+
+        <AlertsPanel alerts={alerts} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="lg:col-span-2 glass-card rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita por Regional</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={regionalData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+              <XAxis dataKey="regional" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+                formatter={(v: number) => formatCurrency(v)} />
+              <Bar dataKey="receita" name="Receita" fill="hsl(162 72% 46%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="ebitda" name="EBITDA" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
+
+        <RankingPanel data={ranking} title="Ranking de Unidades" />
+      </div>
+    </div>
+  );
+}
