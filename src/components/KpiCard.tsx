@@ -32,6 +32,7 @@ export function KpiCard({ title, value, format, change, subtitle, icon, delay = 
         {icon && <span className="text-primary opacity-70">{icon}</span>}
       </div>
       <div className="text-2xl font-display font-bold tracking-tight">{formatted}</div>
+      {subtitle && <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>}
       {change !== undefined && (
         <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${trendColor}`}>
           <TrendIcon className="w-3 h-3" />
