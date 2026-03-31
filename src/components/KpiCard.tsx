@@ -7,6 +7,7 @@ interface KpiCardProps {
   value: number;
   format: 'currency' | 'percent' | 'number';
   change?: number;
+  subtitle?: string;
   icon?: React.ReactNode;
   delay?: number;
 }
