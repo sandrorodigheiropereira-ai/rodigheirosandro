@@ -36,15 +36,13 @@ export default function RegionalDashboard() {
   }, [filtered]);
 
   const costData = useMemo(() => {
-    const cmv = filtered.reduce((s, r) => s + r.cmv, 0);
     const mao = filtered.reduce((s, r) => s + r.maoDeObra, 0);
-    const desp = filtered.reduce((s, r) => s + r.despesaTotal, 0);
     const imp = filtered.reduce((s, r) => s + r.impostos, 0);
+    const mp = filtered.reduce((s, r) => s + (r.materiaPrima || 0), 0);
     return [
-      { name: 'CMV', value: cmv },
       { name: 'Mão de Obra', value: mao },
-      { name: 'Despesas', value: desp },
       { name: 'Impostos', value: imp },
+      { name: 'Matéria Prima', value: mp },
     ];
   }, [filtered]);
 
