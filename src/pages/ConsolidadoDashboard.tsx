@@ -109,7 +109,7 @@ export default function ConsolidadoDashboard() {
                 formatter={(v: number) => formatCurrency(v)} />
               <Legend />
               <Line type="monotone" dataKey="receita" name="Receita" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </motion.div>
