@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { DollarSign, ShoppingCart, Users, TrendingUp } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, TrendingUp, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
