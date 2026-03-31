@@ -42,7 +42,7 @@ export default function ConsolidadoDashboard() {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
       const m = calcMetrics(recs);
-      return { mes: month, receita: m.receitaBruta, ebitda: m.ebitda, margem: m.margemEbitda };
+      return { mes: month, receita: m.receitaBruta, despesa: m.despesaTotal, margem: m.margem };
     });
   }, [filtered]);
 
@@ -51,7 +51,7 @@ export default function ConsolidadoDashboard() {
     return Object.entries(byRegional).map(([name, recs]) => ({
       regional: name,
       receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
-      ebitda: calcMetrics(recs).ebitda,
+      despesa: recs.reduce((s, r) => s + r.despesaTotal, 0),
     }));
   }, [filtered]);
 
@@ -91,10 +91,10 @@ export default function ConsolidadoDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" change={metrics.crescimentoMensal} icon={<DollarSign className="w-5 h-5" />} delay={0} />
-        <KpiCard title="EBITDA" value={metrics.ebitda} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Margem EBITDA" value={metrics.margemEbitda} format="percent" icon={<Percent className="w-5 h-5" />} delay={0.2} />
-        <KpiCard title="Crescimento Mensal" value={metrics.crescimentoMensal} format="percent" icon={<BarChart3 className="w-5 h-5" />} delay={0.3} />
+        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" icon={<DollarSign className="w-5 h-5" />} delay={0} />
+        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
+        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
+        <KpiCard title="Crescimento CMV" value={metrics.crescimentoCmv} format="percent" icon={<BarChart3 className="w-5 h-5" />} delay={0.3} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -109,7 +109,7 @@ export default function ConsolidadoDashboard() {
                 formatter={(v: number) => formatCurrency(v)} />
               <Legend />
               <Line type="monotone" dataKey="receita" name="Receita" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </motion.div>
@@ -128,7 +128,7 @@ export default function ConsolidadoDashboard() {
               <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
                 formatter={(v: number) => formatCurrency(v)} />
               <Bar dataKey="receita" name="Receita" fill="hsl(162 72% 46%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="ebitda" name="EBITDA" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="despesa" name="Despesa Total" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>

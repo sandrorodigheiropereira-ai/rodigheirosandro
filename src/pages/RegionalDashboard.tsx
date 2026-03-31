@@ -31,7 +31,7 @@ export default function RegionalDashboard() {
     return Object.entries(byUnidade).map(([name, recs]) => ({
       unidade: name,
       receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
-      ebitda: calcMetrics(recs).ebitda,
+      despesa: recs.reduce((s, r) => s + r.despesaTotal, 0),
     }));
   }, [filtered]);
 
@@ -87,8 +87,8 @@ export default function RegionalDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" icon={<DollarSign className="w-5 h-5" />} />
-        <KpiCard title="EBITDA" value={metrics.ebitda} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Margem EBITDA" value={metrics.margemEbitda} format="percent" icon={<Percent className="w-5 h-5" />} delay={0.2} />
+        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
+        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -102,7 +102,7 @@ export default function RegionalDashboard() {
               <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
                 formatter={(v: number) => formatCurrency(v)} />
               <Bar dataKey="receita" name="Receita" fill="hsl(162 72% 46%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="ebitda" name="EBITDA" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="despesa" name="Despesa Total" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>

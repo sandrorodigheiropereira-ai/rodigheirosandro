@@ -26,12 +26,12 @@ export interface MetaRecord {
 export interface CalculatedMetrics {
   receitaBruta: number;
   receitaLiquida: number;
-  ebitda: number;
-  margemEbitda: number;
-  margemLiquida: number;
+  despesaTotal: number;
+  margem: number;
+  meta: number;
   cmvPercent: number;
   maoDeObraPercent: number;
-  crescimentoMensal: number;
+  crescimentoCmv: number;
 }
 
 export interface Alert {

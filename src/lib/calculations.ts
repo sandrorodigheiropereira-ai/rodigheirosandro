@@ -6,20 +6,21 @@ export function calcMetrics(records: FinancialRecord[], prevRecords?: FinancialR
   const cmvTotal = records.reduce((s, r) => s + r.cmv, 0);
   const maoDeObraTotal = records.reduce((s, r) => s + r.maoDeObra, 0);
   const despesaTotal = records.reduce((s, r) => s + r.despesaTotal, 0);
-  const ebitda = receitaLiquida - cmvTotal - maoDeObraTotal - despesaTotal;
+  const margem = records.length > 0 ? records.reduce((s, r) => s + r.margem, 0) / records.length : 0;
+  const meta = records.length > 0 ? records.reduce((s, r) => s + r.meta, 0) / records.length : 0;
 
-  const prevReceita = prevRecords?.reduce((s, r) => s + r.receitaBruta, 0) || 0;
-  const crescimentoMensal = prevReceita > 0 ? ((receitaBruta - prevReceita) / prevReceita) * 100 : 0;
+  const prevCmv = prevRecords?.reduce((s, r) => s + r.cmv, 0) || 0;
+  const crescimentoCmv = prevCmv > 0 ? ((cmvTotal - prevCmv) / prevCmv) * 100 : 0;
 
   return {
     receitaBruta,
     receitaLiquida,
-    ebitda,
-    margemEbitda: receitaLiquida > 0 ? (ebitda / receitaLiquida) * 100 : 0,
-    margemLiquida: receitaBruta > 0 ? ((receitaLiquida - cmvTotal - maoDeObraTotal - despesaTotal) / receitaBruta) * 100 : 0,
+    despesaTotal,
+    margem,
+    meta,
     cmvPercent: receitaLiquida > 0 ? (cmvTotal / receitaLiquida) * 100 : 0,
     maoDeObraPercent: receitaLiquida > 0 ? (maoDeObraTotal / receitaLiquida) * 100 : 0,
-    crescimentoMensal,
+    crescimentoCmv,
   };
 }
 

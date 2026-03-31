@@ -37,7 +37,7 @@ export default function UnidadeDashboard() {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
       const m = calcMetrics(recs);
-      return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), lucro: m.ebitda };
+      return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal };
     });
   }, [filtered]);
 
@@ -88,7 +88,7 @@ export default function UnidadeDashboard() {
         <KpiCard title="Receita" value={metrics.receitaBruta} format="currency" icon={<DollarSign className="w-5 h-5" />} />
         <KpiCard title="CMV" value={metrics.cmvPercent} format="percent" icon={<ShoppingCart className="w-5 h-5" />} delay={0.1} />
         <KpiCard title="Mão de Obra" value={metrics.maoDeObraPercent} format="percent" icon={<Users className="w-5 h-5" />} delay={0.2} />
-        <KpiCard title="EBITDA" value={metrics.ebitda} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.3} />
+        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.3} />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
@@ -104,7 +104,7 @@ export default function UnidadeDashboard() {
             <Line type="monotone" dataKey="receita" name="Receita" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="cmv" name="CMV" stroke="hsl(38 92% 55%)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="maoDeObra" name="Mão de Obra" stroke="hsl(280 65% 60%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="lucro" name="Lucro" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </motion.div>
