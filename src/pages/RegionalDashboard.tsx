@@ -9,7 +9,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const PIE_COLORS = ['hsl(162 72% 46%)', 'hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
+const PIE_COLORS = ['hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
 
 export default function RegionalDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
