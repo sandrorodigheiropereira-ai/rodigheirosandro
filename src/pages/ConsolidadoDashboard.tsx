@@ -51,7 +51,7 @@ export default function ConsolidadoDashboard() {
     return Object.entries(byRegional).map(([name, recs]) => ({
       regional: name,
       receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
-      ebitda: calcMetrics(recs).ebitda,
+      despesa: recs.reduce((s, r) => s + r.despesaTotal, 0),
     }));
   }, [filtered]);
 
