@@ -104,7 +104,7 @@ export default function UnidadeDashboard() {
             <Line type="monotone" dataKey="receita" name="Receita" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="cmv" name="CMV" stroke="hsl(38 92% 55%)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="maoDeObra" name="Mão de Obra" stroke="hsl(280 65% 60%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="lucro" name="Lucro" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </motion.div>

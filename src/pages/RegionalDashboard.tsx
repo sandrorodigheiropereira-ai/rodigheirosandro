@@ -102,7 +102,7 @@ export default function RegionalDashboard() {
               <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
                 formatter={(v: number) => formatCurrency(v)} />
               <Bar dataKey="receita" name="Receita" fill="hsl(162 72% 46%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="ebitda" name="EBITDA" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="despesa" name="Despesa Total" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
