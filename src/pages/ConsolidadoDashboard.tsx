@@ -42,7 +42,7 @@ export default function ConsolidadoDashboard() {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
       const m = calcMetrics(recs);
-      return { mes: month, receita: m.receitaBruta, ebitda: m.ebitda, margem: m.margemEbitda };
+      return { mes: month, receita: m.receitaBruta, despesa: m.despesaTotal, margem: m.margem };
     });
   }, [filtered]);
 
