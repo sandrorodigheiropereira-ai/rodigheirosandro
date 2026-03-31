@@ -31,7 +31,7 @@ export default function RegionalDashboard() {
     return Object.entries(byUnidade).map(([name, recs]) => ({
       unidade: name,
       receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
-      ebitda: calcMetrics(recs).ebitda,
+      despesa: recs.reduce((s, r) => s + r.despesaTotal, 0),
     }));
   }, [filtered]);
 
