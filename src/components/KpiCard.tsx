@@ -12,7 +12,7 @@ interface KpiCardProps {
   delay?: number;
 }
 
-export function KpiCard({ title, value, format, change, icon, delay = 0 }: KpiCardProps) {
+export function KpiCard({ title, value, format, change, subtitle, icon, delay = 0 }: KpiCardProps) {
   const formatted = format === 'currency' ? formatCurrency(value)
     : format === 'percent' ? formatPercent(value)
     : value.toLocaleString('pt-BR');
