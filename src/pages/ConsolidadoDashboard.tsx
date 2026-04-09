@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function ConsolidadoDashboard() {
   const [periodo, setPeriodo] = useState('all');
   const [regional, setRegional] = useState('all');
-  const [unidade, setUnidade] = useState('all');
+  const [unidade, setUnidade] = useState<string[]>([]);
 
   const { data: sheetData, isLoading, error } = useSheetData();
   const allRecords = sheetData?.data || [];
@@ -22,7 +22,7 @@ export default function ConsolidadoDashboard() {
     let data = allRecords;
     if (periodo !== 'all') data = data.filter(r => r.data === periodo);
     if (regional !== 'all') data = data.filter(r => r.regional === regional);
-    if (unidade !== 'all') data = data.filter(r => r.unidade === unidade);
+    if (unidade.length > 0) data = data.filter(r => unidade.includes(r.unidade));
     return data;
   }, [periodo, regional, unidade, allRecords]);
 
@@ -32,7 +32,7 @@ export default function ConsolidadoDashboard() {
   const prevMonth = currentIdx > 0 ? meses[currentIdx - 1] : undefined;
 
   const currentData = filtered.filter(r => periodo === 'all' || r.data === currentMonth);
-  const prevData = prevMonth ? allRecords.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade === 'all' || r.unidade === unidade)) : undefined;
+  const prevData = prevMonth ? allRecords.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade.length === 0 || unidade.includes(r.unidade))) : undefined;
 
   const metrics = calcMetrics(currentData, prevData);
   const alerts = generateAlerts(filtered);
@@ -86,8 +86,8 @@ export default function ConsolidadoDashboard() {
           <p className="text-sm text-muted-foreground">Visão geral de todas as regionais • Dados do Google Sheets</p>
         </div>
         <FiltersBar periodo={periodo} regional={regional} unidade={unidade}
-          onPeriodoChange={setPeriodo} onRegionalChange={setRegional} onUnidadeChange={setUnidade}
-          records={allRecords} />
+          onPeriodoChange={setPeriodo} onRegionalChange={(v) => { setRegional(v); setUnidade([]); }} onUnidadeChange={(v) => setUnidade(Array.isArray(v) ? v : v === 'all' ? [] : [v])}
+          records={allRecords} multiSelectUnidade />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
