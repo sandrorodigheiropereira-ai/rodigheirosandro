@@ -23,6 +23,7 @@ export default function AdministrativoDashboard() {
   const availableUnits = useMemo(() => [...new Set(admRecords.map(r => r.unidade))].sort(), [admRecords]);
 
   const metrics = calcMetrics(filtered);
+  const margemAdm = metrics.receitaBruta > 0 ? (metrics.despesaTotal / metrics.receitaBruta) * 100 : 0;
 
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
