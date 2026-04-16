@@ -1,4 +1,4 @@
-import { LayoutDashboard, Map, Building2, FileSpreadsheet } from 'lucide-react';
+import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -16,6 +16,7 @@ const items = [
   { title: 'Consolidado', url: '/', icon: LayoutDashboard },
   { title: 'Regional', url: '/regional', icon: Map },
   { title: 'Unidade', url: '/unidade', icon: Building2 },
+  { title: 'Administrativo', url: '/administrativo', icon: Briefcase },
 ];
 
 export function AppSidebar() {

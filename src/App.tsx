@@ -7,6 +7,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import ConsolidadoDashboard from "./pages/ConsolidadoDashboard";
 import RegionalDashboard from "./pages/RegionalDashboard";
 import UnidadeDashboard from "./pages/UnidadeDashboard";
+import AdministrativoDashboard from "./pages/AdministrativoDashboard";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<ConsolidadoDashboard />} />
             <Route path="/regional" element={<RegionalDashboard />} />
             <Route path="/unidade" element={<UnidadeDashboard />} />
+            <Route path="/administrativo" element={<AdministrativoDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </DashboardLayout>
