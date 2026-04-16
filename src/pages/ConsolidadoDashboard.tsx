@@ -37,19 +37,7 @@ export default function ConsolidadoDashboard() {
 
   const metrics = calcMetrics(currentData, prevData);
   const alerts = generateAlerts(filtered);
-  const admUnits = ['ADM/TO', 'ADM/GO', 'ADM/PR', 'ADM/ES'];
-  const admRecords = filtered.filter(r => admUnits.includes(r.unidade));
-  const ranking = admRecords.length > 0
-    ? (() => {
-        const byUnidade = groupBy(admRecords, 'unidade');
-        return Object.entries(byUnidade).map(([unidade, recs]) => ({
-          unidade,
-          regional: recs[0].regional,
-          value: recs.reduce((s, r) => s + r.despesaTotal, 0),
-        })).sort((a, b) => b.value - a.value);
-      })()
-    : [];
-
+  const ranking = rankUnidades(filtered);
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
