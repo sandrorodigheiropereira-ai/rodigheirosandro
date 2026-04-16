@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
+import { filterOutAdm } from '@/lib/constants';
 import { RankingPanel } from '@/components/RankingPanel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSheetData, getRegionaisFromData } from '@/hooks/useSheetData';
@@ -13,7 +14,7 @@ const PIE_COLORS = ['hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
 
 export default function RegionalDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
-  const allRecords = sheetData?.data || [];
+  const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
 

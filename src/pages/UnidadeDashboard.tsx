@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { DollarSign, ShoppingCart, Users, TrendingUp, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
+import { filterOutAdm } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -10,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UnidadeDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
-  const allRecords = sheetData?.data || [];
+  const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
   const [unidade, setUnidade] = useState('');
