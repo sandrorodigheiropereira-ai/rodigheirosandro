@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { DollarSign, TrendingUp, Percent, Users, ShoppingCart } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
-import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
+import { calcMetrics, groupBy, formatCurrency, formatPercent } from '@/lib/calculations';
 import { useSheetData } from '@/hooks/useSheetData';
-import { filterOnlyAdm, ADM_UNITS } from '@/lib/constants';
+import { filterOnlyAdm, filterOutAdm, ADM_UNITS } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
@@ -14,11 +14,25 @@ export default function AdministrativoDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
 
   const admRecords = useMemo(() => filterOnlyAdm(sheetData?.data || []), [sheetData]);
+  const operationalRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
 
   const filtered = useMemo(() => {
     if (selectedUnit === 'all') return admRecords;
     return admRecords.filter(r => r.unidade === selectedUnit);
   }, [admRecords, selectedUnit]);
+
+  // % Despesa ADM sobre Receita Total da Regional (operacional, sem ADM)
+  const admVsRegional = useMemo(() => {
+    const admByRegional = groupBy(admRecords, 'regional');
+    const opByRegional = groupBy(operationalRecords, 'regional');
+    const allRegionais = [...new Set([...Object.keys(admByRegional), ...Object.keys(opByRegional)])].sort();
+    return allRegionais.map(reg => {
+      const despesaAdm = (admByRegional[reg] || []).reduce((s, r) => s + r.despesaTotal, 0);
+      const receitaRegional = (opByRegional[reg] || []).reduce((s, r) => s + r.receitaBruta, 0);
+      const percent = receitaRegional > 0 ? (despesaAdm / receitaRegional) * 100 : 0;
+      return { regional: reg, despesaAdm, receitaRegional, percent };
+    });
+  }, [admRecords, operationalRecords]);
 
   const availableUnits = useMemo(() => [...new Set(admRecords.map(r => r.unidade))].sort(), [admRecords]);
 
@@ -87,6 +101,46 @@ export default function AdministrativoDashboard() {
         <KpiCard title="Mão de Obra" value={metrics.maoDeObraPercent} format="percent" icon={<Users className="w-5 h-5" />} delay={0.3} />
         <KpiCard title="Margem (%)" value={margemAdm} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.4} />
       </div>
+
+      {/* % Despesa ADM sobre Receita Total da Regional */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">% Despesa ADM / Receita Total da Regional</h3>
+            <p className="text-xs text-muted-foreground mt-1">Fórmula: Despesa ADM ÷ Receita Total Operacional da Regional × 100</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {admVsRegional.map((item, i) => (
+            <motion.div
+              key={item.regional}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i }}
+              className="rounded-lg border border-border bg-secondary/40 p-4"
+            >
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.regional}</p>
+              <p className="text-2xl font-display font-bold mt-2">{formatPercent(item.percent)}</p>
+              <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                <p>Despesa ADM: {formatCurrency(item.despesaAdm)}</p>
+                <p>Receita Reg.: {formatCurrency(item.receitaRegional)}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={admVsRegional}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+            <XAxis dataKey="regional" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <Tooltip
+              contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+              formatter={(v: number) => `${v.toFixed(2)}%`}
+            />
+            <Bar dataKey="percent" name="% ADM/Receita" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
