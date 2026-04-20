@@ -155,8 +155,6 @@ export default function AdministrativoDashboard() {
         </ResponsiveContainer>
       </motion.div>
 
-      {/*
-
       {/* % Despesa ADM sobre Receita Total da Regional */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
