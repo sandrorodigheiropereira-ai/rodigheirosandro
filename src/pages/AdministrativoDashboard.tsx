@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { DollarSign, TrendingUp, Percent, Users, ShoppingCart } from 'lucide-react';
+import { TrendingUp, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency, formatPercent } from '@/lib/calculations';
 import { useSheetData } from '@/hooks/useSheetData';
