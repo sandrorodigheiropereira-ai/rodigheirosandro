@@ -181,6 +181,27 @@ export default function AdministrativoDashboard() {
         </ResponsiveContainer>
       </motion.div>
 
+      {/* Evolução mensal do % ADM/Receita Regional */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }} className="glass-card rounded-xl p-5">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">% Despesa ADM / Receita Regional — Evolução Mensal</h3>
+          <p className="text-xs text-muted-foreground mt-1">Mesmo cálculo aplicado mês a mês (todas as regionais agregadas)</p>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={admVsRegionalMonthly}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+            <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <Tooltip
+              contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+              formatter={(v: number) => `${v.toFixed(2)}%`}
+            />
+            <Legend />
+            <Line type="monotone" dataKey="percent" name="% ADM/Receita" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </motion.div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Evolução Mensal</h3>
