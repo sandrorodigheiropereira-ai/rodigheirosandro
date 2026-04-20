@@ -111,15 +111,26 @@ export default function AdministrativoDashboard() {
           <h1 className="text-2xl font-display font-bold">Dashboard Administrativo</h1>
           <p className="text-sm text-muted-foreground">Visão exclusiva das unidades administrativas</p>
         </div>
-        <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-          <SelectTrigger className="w-[180px] bg-secondary border-border">
-            <SelectValue placeholder="Unidade ADM" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas ADMs</SelectItem>
-            {availableUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[180px] bg-secondary border-border">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os meses</SelectItem>
+              {availableMonths.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <SelectTrigger className="w-[180px] bg-secondary border-border">
+              <SelectValue placeholder="Unidade ADM" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas ADMs</SelectItem>
+              {availableUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
