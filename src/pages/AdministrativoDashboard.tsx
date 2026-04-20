@@ -11,17 +11,32 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdministrativoDashboard() {
   const [selectedUnit, setSelectedUnit] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState('all');
   const { data: sheetData, isLoading, error } = useSheetData();
 
-  const admRecords = useMemo(() => filterOnlyAdm(sheetData?.data || []), [sheetData]);
-  const operationalRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
+  const admRecordsAll = useMemo(() => filterOnlyAdm(sheetData?.data || []), [sheetData]);
+  const operationalRecordsAll = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
+
+  const availableMonths = useMemo(
+    () => [...new Set([...admRecordsAll, ...operationalRecordsAll].map(r => r.data))].filter(Boolean).sort(),
+    [admRecordsAll, operationalRecordsAll]
+  );
+
+  const admRecords = useMemo(
+    () => selectedMonth === 'all' ? admRecordsAll : admRecordsAll.filter(r => r.data === selectedMonth),
+    [admRecordsAll, selectedMonth]
+  );
+  const operationalRecords = useMemo(
+    () => selectedMonth === 'all' ? operationalRecordsAll : operationalRecordsAll.filter(r => r.data === selectedMonth),
+    [operationalRecordsAll, selectedMonth]
+  );
 
   const filtered = useMemo(() => {
     if (selectedUnit === 'all') return admRecords;
     return admRecords.filter(r => r.unidade === selectedUnit);
   }, [admRecords, selectedUnit]);
 
-  // % Despesa ADM sobre Receita Total da Regional (operacional, sem ADM)
+  // % Despesa ADM sobre Receita Total da Regional (operacional, sem ADM) — respeita filtro de mês
   const admVsRegional = useMemo(() => {
     const admByRegional = groupBy(admRecords, 'regional');
     const opByRegional = groupBy(operationalRecords, 'regional');
@@ -34,7 +49,20 @@ export default function AdministrativoDashboard() {
     });
   }, [admRecords, operationalRecords]);
 
-  const availableUnits = useMemo(() => [...new Set(admRecords.map(r => r.unidade))].sort(), [admRecords]);
+  // Evolução mensal do % ADM/Receita Regional (todas regionais agregadas)
+  const admVsRegionalMonthly = useMemo(() => {
+    const admByMonth = groupBy(admRecordsAll, 'data');
+    const opByMonth = groupBy(operationalRecordsAll, 'data');
+    const allMonths = [...new Set([...Object.keys(admByMonth), ...Object.keys(opByMonth)])].sort();
+    return allMonths.map(mes => {
+      const despesaAdm = (admByMonth[mes] || []).reduce((s, r) => s + r.despesaTotal, 0);
+      const receitaRegional = (opByMonth[mes] || []).reduce((s, r) => s + r.receitaBruta, 0);
+      const percent = receitaRegional > 0 ? (despesaAdm / receitaRegional) * 100 : 0;
+      return { mes, despesaAdm, receitaRegional, percent };
+    });
+  }, [admRecordsAll, operationalRecordsAll]);
+
+  const availableUnits = useMemo(() => [...new Set(admRecordsAll.map(r => r.unidade))].sort(), [admRecordsAll]);
 
   const metrics = calcMetrics(filtered);
   const margemAdm = metrics.receitaBruta > 0 ? (metrics.despesaTotal / metrics.receitaBruta) * 100 : 0;
