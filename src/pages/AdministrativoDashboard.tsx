@@ -160,7 +160,7 @@ export default function AdministrativoDashboard() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">% Despesa ADM / Receita Total da Regional</h3>
-            <p className="text-xs text-muted-foreground mt-1">Fórmula: Despesa ADM ÷ Receita Total Operacional da Regional × 100</p>
+            <p className="text-xs text-muted-foreground mt-1">{"\n"}</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -199,7 +199,7 @@ export default function AdministrativoDashboard() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }} className="glass-card rounded-xl p-5">
         <div className="mb-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">% Despesa ADM / Receita Regional — Evolução Mensal</h3>
-          <p className="text-xs text-muted-foreground mt-1">Mesmo cálculo aplicado mês a mês (todas as regionais agregadas)</p>
+          <p className="text-xs text-muted-foreground mt-1">{"\n"}</p>
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={admVsRegionalMonthly}>
