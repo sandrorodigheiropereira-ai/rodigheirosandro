@@ -11,17 +11,32 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdministrativoDashboard() {
   const [selectedUnit, setSelectedUnit] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState('all');
   const { data: sheetData, isLoading, error } = useSheetData();
 
-  const admRecords = useMemo(() => filterOnlyAdm(sheetData?.data || []), [sheetData]);
-  const operationalRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
+  const admRecordsAll = useMemo(() => filterOnlyAdm(sheetData?.data || []), [sheetData]);
+  const operationalRecordsAll = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
+
+  const availableMonths = useMemo(
+    () => [...new Set([...admRecordsAll, ...operationalRecordsAll].map(r => r.data))].filter(Boolean).sort(),
+    [admRecordsAll, operationalRecordsAll]
+  );
+
+  const admRecords = useMemo(
+    () => selectedMonth === 'all' ? admRecordsAll : admRecordsAll.filter(r => r.data === selectedMonth),
+    [admRecordsAll, selectedMonth]
+  );
+  const operationalRecords = useMemo(
+    () => selectedMonth === 'all' ? operationalRecordsAll : operationalRecordsAll.filter(r => r.data === selectedMonth),
+    [operationalRecordsAll, selectedMonth]
+  );
 
   const filtered = useMemo(() => {
     if (selectedUnit === 'all') return admRecords;
     return admRecords.filter(r => r.unidade === selectedUnit);
   }, [admRecords, selectedUnit]);
 
-  // % Despesa ADM sobre Receita Total da Regional (operacional, sem ADM)
+  // % Despesa ADM sobre Receita Total da Regional (operacional, sem ADM) — respeita filtro de mês
   const admVsRegional = useMemo(() => {
     const admByRegional = groupBy(admRecords, 'regional');
     const opByRegional = groupBy(operationalRecords, 'regional');
@@ -34,7 +49,20 @@ export default function AdministrativoDashboard() {
     });
   }, [admRecords, operationalRecords]);
 
-  const availableUnits = useMemo(() => [...new Set(admRecords.map(r => r.unidade))].sort(), [admRecords]);
+  // Evolução mensal do % ADM/Receita Regional (todas regionais agregadas)
+  const admVsRegionalMonthly = useMemo(() => {
+    const admByMonth = groupBy(admRecordsAll, 'data');
+    const opByMonth = groupBy(operationalRecordsAll, 'data');
+    const allMonths = [...new Set([...Object.keys(admByMonth), ...Object.keys(opByMonth)])].sort();
+    return allMonths.map(mes => {
+      const despesaAdm = (admByMonth[mes] || []).reduce((s, r) => s + r.despesaTotal, 0);
+      const receitaRegional = (opByMonth[mes] || []).reduce((s, r) => s + r.receitaBruta, 0);
+      const percent = receitaRegional > 0 ? (despesaAdm / receitaRegional) * 100 : 0;
+      return { mes, despesaAdm, receitaRegional, percent };
+    });
+  }, [admRecordsAll, operationalRecordsAll]);
+
+  const availableUnits = useMemo(() => [...new Set(admRecordsAll.map(r => r.unidade))].sort(), [admRecordsAll]);
 
   const metrics = calcMetrics(filtered);
   const margemAdm = metrics.receitaBruta > 0 ? (metrics.despesaTotal / metrics.receitaBruta) * 100 : 0;
@@ -83,15 +111,26 @@ export default function AdministrativoDashboard() {
           <h1 className="text-2xl font-display font-bold">Dashboard Administrativo</h1>
           <p className="text-sm text-muted-foreground">Visão exclusiva das unidades administrativas</p>
         </div>
-        <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-          <SelectTrigger className="w-[180px] bg-secondary border-border">
-            <SelectValue placeholder="Unidade ADM" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas ADMs</SelectItem>
-            {availableUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[180px] bg-secondary border-border">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os meses</SelectItem>
+              {availableMonths.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+            <SelectTrigger className="w-[180px] bg-secondary border-border">
+              <SelectValue placeholder="Unidade ADM" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas ADMs</SelectItem>
+              {availableUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -139,6 +178,27 @@ export default function AdministrativoDashboard() {
             />
             <Bar dataKey="percent" name="% ADM/Receita" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
           </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
+
+      {/* Evolução mensal do % ADM/Receita Regional */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }} className="glass-card rounded-xl p-5">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">% Despesa ADM / Receita Regional — Evolução Mensal</h3>
+          <p className="text-xs text-muted-foreground mt-1">Mesmo cálculo aplicado mês a mês (todas as regionais agregadas)</p>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={admVsRegionalMonthly}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+            <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <Tooltip
+              contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+              formatter={(v: number) => `${v.toFixed(2)}%`}
+            />
+            <Legend />
+            <Line type="monotone" dataKey="percent" name="% ADM/Receita" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
         </ResponsiveContainer>
       </motion.div>
 
