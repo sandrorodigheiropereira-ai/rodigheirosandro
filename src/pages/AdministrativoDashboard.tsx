@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function AdministrativoDashboard() {
   const [selectedUnit, setSelectedUnit] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
+  const [threshold, setThreshold] = useState(15);
   const { data: sheetData, isLoading, error } = useSheetData();
 
   const admRecordsAll = useMemo(() => filterOnlyAdm(sheetData?.data || []), [sheetData]);
