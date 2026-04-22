@@ -80,6 +80,55 @@ export default function AdministrativoDashboard() {
     });
   }, [admRecordsAll, operationalRecordsAll, selectedRegional]);
 
+  // Alertas automáticos: limite excedido (atual) + piora do percentual mês a mês por regional
+  const alerts = useMemo(() => {
+    type AdmAlert = { type: 'danger' | 'warning'; regional: string; message: string; value: number };
+    const out: AdmAlert[] = [];
+
+    // 1) Limite excedido — snapshot atual (respeita filtro de mês e unidade)
+    const scope = selectedRegional ? admVsRegional.filter(i => i.regional === selectedRegional) : admVsRegional;
+    for (const item of scope) {
+      if (item.percent > threshold) {
+        out.push({
+          type: 'danger',
+          regional: item.regional,
+          message: `% ADM/Receita acima do limite (${threshold.toFixed(1)}%): ${item.percent.toFixed(2)}%`,
+          value: item.percent,
+        });
+      }
+    }
+
+    // 2) Piora mês a mês — comparando os 2 últimos meses disponíveis por regional
+    const regionaisToCheck = selectedRegional
+      ? [selectedRegional]
+      : [...new Set(admRecordsAll.map(r => r.regional))];
+    for (const reg of regionaisToCheck) {
+      const adm = admRecordsAll.filter(r => r.regional === reg);
+      const op = operationalRecordsAll.filter(r => r.regional === reg);
+      const months = [...new Set([...adm.map(r => r.data), ...op.map(r => r.data)])].filter(Boolean).sort();
+      if (months.length < 2) continue;
+      const last = months[months.length - 1];
+      const prev = months[months.length - 2];
+      const pctOf = (mes: string) => {
+        const desp = adm.filter(r => r.data === mes).reduce((s, r) => s + r.despesaTotal, 0);
+        const rec = op.filter(r => r.data === mes).reduce((s, r) => s + r.receitaBruta, 0);
+        return rec > 0 ? (desp / rec) * 100 : 0;
+      };
+      const pLast = pctOf(last);
+      const pPrev = pctOf(prev);
+      const delta = pLast - pPrev;
+      if (delta > 1) {
+        out.push({
+          type: delta > 3 ? 'danger' : 'warning',
+          regional: reg,
+          message: `Piora mês a mês: ${prev} ${pPrev.toFixed(2)}% → ${last} ${pLast.toFixed(2)}% (+${delta.toFixed(2)} p.p.)`,
+          value: delta,
+        });
+      }
+    }
+    return out;
+  }, [admVsRegional, selectedRegional, threshold, admRecordsAll, operationalRecordsAll]);
+
   const availableUnits = useMemo(() => [...new Set(admRecordsAll.map(r => r.unidade))].sort(), [admRecordsAll]);
 
   const metrics = calcMetrics(filtered);
