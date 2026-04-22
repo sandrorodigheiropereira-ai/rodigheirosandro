@@ -178,7 +178,19 @@ export default function AdministrativoDashboard() {
           <h1 className="text-2xl font-display font-bold">Dashboard Administrativo</h1>
           <p className="text-sm text-muted-foreground">Visão exclusiva das unidades administrativas</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="threshold" className="text-xs text-muted-foreground">Limite alerta (%)</Label>
+            <Input
+              id="threshold"
+              type="number"
+              min={0}
+              step={0.5}
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value) || 0)}
+              className="w-[120px] bg-secondary border-border"
+            />
+          </div>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[180px] bg-secondary border-border">
               <SelectValue placeholder="Mês" />
@@ -199,6 +211,41 @@ export default function AdministrativoDashboard() {
           </Select>
         </div>
       </div>
+
+      {alerts.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card rounded-xl p-5 space-y-2"
+        >
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning" />
+            Alertas Automáticos ({alerts.length})
+          </h3>
+          <div className="space-y-2">
+            {alerts.map((a, i) => {
+              const Icon = a.type === 'danger' ? AlertCircle : TrendingDown;
+              const colorBorder = a.type === 'danger' ? 'border-destructive/30 bg-destructive/5' : 'border-warning/30 bg-warning/5';
+              const colorIcon = a.type === 'danger' ? 'text-destructive' : 'text-warning';
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className={`flex items-start gap-3 p-3 rounded-lg border ${colorBorder}`}
+                >
+                  <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${colorIcon}`} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Regional {a.regional}</p>
+                    <p className="text-xs text-muted-foreground">{a.message}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
