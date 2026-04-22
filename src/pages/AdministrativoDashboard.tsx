@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, Percent } from 'lucide-react';
+import { TrendingUp, Percent, AlertTriangle, AlertCircle, TrendingDown } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency, formatPercent } from '@/lib/calculations';
 import { useSheetData } from '@/hooks/useSheetData';
 import { filterOnlyAdm, filterOutAdm, ADM_UNITS } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function AdministrativoDashboard() {
   const [selectedUnit, setSelectedUnit] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
+  const [threshold, setThreshold] = useState(15);
   const { data: sheetData, isLoading, error } = useSheetData();
 
   const admRecordsAll = useMemo(() => filterOnlyAdm(sheetData?.data || []), [sheetData]);
@@ -77,6 +80,55 @@ export default function AdministrativoDashboard() {
     });
   }, [admRecordsAll, operationalRecordsAll, selectedRegional]);
 
+  // Alertas automáticos: limite excedido (atual) + piora do percentual mês a mês por regional
+  const alerts = useMemo(() => {
+    type AdmAlert = { type: 'danger' | 'warning'; regional: string; message: string; value: number };
+    const out: AdmAlert[] = [];
+
+    // 1) Limite excedido — snapshot atual (respeita filtro de mês e unidade)
+    const scope = selectedRegional ? admVsRegional.filter(i => i.regional === selectedRegional) : admVsRegional;
+    for (const item of scope) {
+      if (item.percent > threshold) {
+        out.push({
+          type: 'danger',
+          regional: item.regional,
+          message: `% ADM/Receita acima do limite (${threshold.toFixed(1)}%): ${item.percent.toFixed(2)}%`,
+          value: item.percent,
+        });
+      }
+    }
+
+    // 2) Piora mês a mês — comparando os 2 últimos meses disponíveis por regional
+    const regionaisToCheck = selectedRegional
+      ? [selectedRegional]
+      : [...new Set(admRecordsAll.map(r => r.regional))];
+    for (const reg of regionaisToCheck) {
+      const adm = admRecordsAll.filter(r => r.regional === reg);
+      const op = operationalRecordsAll.filter(r => r.regional === reg);
+      const months = [...new Set([...adm.map(r => r.data), ...op.map(r => r.data)])].filter(Boolean).sort();
+      if (months.length < 2) continue;
+      const last = months[months.length - 1];
+      const prev = months[months.length - 2];
+      const pctOf = (mes: string) => {
+        const desp = adm.filter(r => r.data === mes).reduce((s, r) => s + r.despesaTotal, 0);
+        const rec = op.filter(r => r.data === mes).reduce((s, r) => s + r.receitaBruta, 0);
+        return rec > 0 ? (desp / rec) * 100 : 0;
+      };
+      const pLast = pctOf(last);
+      const pPrev = pctOf(prev);
+      const delta = pLast - pPrev;
+      if (delta > 1) {
+        out.push({
+          type: delta > 3 ? 'danger' : 'warning',
+          regional: reg,
+          message: `Piora mês a mês: ${prev} ${pPrev.toFixed(2)}% → ${last} ${pLast.toFixed(2)}% (+${delta.toFixed(2)} p.p.)`,
+          value: delta,
+        });
+      }
+    }
+    return out;
+  }, [admVsRegional, selectedRegional, threshold, admRecordsAll, operationalRecordsAll]);
+
   const availableUnits = useMemo(() => [...new Set(admRecordsAll.map(r => r.unidade))].sort(), [admRecordsAll]);
 
   const metrics = calcMetrics(filtered);
@@ -126,7 +178,19 @@ export default function AdministrativoDashboard() {
           <h1 className="text-2xl font-display font-bold">Dashboard Administrativo</h1>
           <p className="text-sm text-muted-foreground">Visão exclusiva das unidades administrativas</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="threshold" className="text-xs text-muted-foreground">Limite alerta (%)</Label>
+            <Input
+              id="threshold"
+              type="number"
+              min={0}
+              step={0.5}
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value) || 0)}
+              className="w-[120px] bg-secondary border-border"
+            />
+          </div>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[180px] bg-secondary border-border">
               <SelectValue placeholder="Mês" />
@@ -147,6 +211,41 @@ export default function AdministrativoDashboard() {
           </Select>
         </div>
       </div>
+
+      {alerts.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card rounded-xl p-5 space-y-2"
+        >
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning" />
+            Alertas Automáticos ({alerts.length})
+          </h3>
+          <div className="space-y-2">
+            {alerts.map((a, i) => {
+              const Icon = a.type === 'danger' ? AlertCircle : TrendingDown;
+              const colorBorder = a.type === 'danger' ? 'border-destructive/30 bg-destructive/5' : 'border-warning/30 bg-warning/5';
+              const colorIcon = a.type === 'danger' ? 'text-destructive' : 'text-warning';
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className={`flex items-start gap-3 p-3 rounded-lg border ${colorBorder}`}
+                >
+                  <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${colorIcon}`} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Regional {a.regional}</p>
+                    <p className="text-xs text-muted-foreground">{a.message}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
