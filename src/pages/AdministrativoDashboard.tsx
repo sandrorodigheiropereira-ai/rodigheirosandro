@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { TrendingUp, Percent } from 'lucide-react';
+import { TrendingUp, Percent, AlertTriangle, AlertCircle, TrendingDown } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency, formatPercent } from '@/lib/calculations';
 import { useSheetData } from '@/hooks/useSheetData';
 import { filterOnlyAdm, filterOutAdm, ADM_UNITS } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
