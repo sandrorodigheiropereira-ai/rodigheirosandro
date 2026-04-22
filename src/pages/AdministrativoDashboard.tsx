@@ -49,10 +49,25 @@ export default function AdministrativoDashboard() {
     });
   }, [admRecords, operationalRecords]);
 
-  // Evolução mensal do % ADM/Receita Regional (todas regionais agregadas)
+  // Regional derivada da unidade ADM selecionada (ex.: ADM/ES -> ES)
+  const selectedRegional = useMemo(() => {
+    if (selectedUnit === 'all') return null;
+    const parts = selectedUnit.split('/');
+    return parts[1] || null;
+  }, [selectedUnit]);
+
+  // Evolução mensal do % ADM/Receita Regional
+  // - Se uma unidade ADM estiver selecionada: filtra pela regional correspondente
+  // - Caso contrário: todas as regionais agregadas
   const admVsRegionalMonthly = useMemo(() => {
-    const admByMonth = groupBy(admRecordsAll, 'data');
-    const opByMonth = groupBy(operationalRecordsAll, 'data');
+    const admScope = selectedRegional
+      ? admRecordsAll.filter(r => r.regional === selectedRegional)
+      : admRecordsAll;
+    const opScope = selectedRegional
+      ? operationalRecordsAll.filter(r => r.regional === selectedRegional)
+      : operationalRecordsAll;
+    const admByMonth = groupBy(admScope, 'data');
+    const opByMonth = groupBy(opScope, 'data');
     const allMonths = [...new Set([...Object.keys(admByMonth), ...Object.keys(opByMonth)])].sort();
     return allMonths.map(mes => {
       const despesaAdm = (admByMonth[mes] || []).reduce((s, r) => s + r.despesaTotal, 0);
@@ -60,7 +75,7 @@ export default function AdministrativoDashboard() {
       const percent = receitaRegional > 0 ? (despesaAdm / receitaRegional) * 100 : 0;
       return { mes, despesaAdm, receitaRegional, percent };
     });
-  }, [admRecordsAll, operationalRecordsAll]);
+  }, [admRecordsAll, operationalRecordsAll, selectedRegional]);
 
   const availableUnits = useMemo(() => [...new Set(admRecordsAll.map(r => r.unidade))].sort(), [admRecordsAll]);
 
@@ -79,8 +94,8 @@ export default function AdministrativoDashboard() {
     const byUnit = groupBy(filtered, 'unidade');
     return Object.entries(byUnit).map(([name, recs]) => ({
       unidade: name,
-      receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
-      despesa: recs.reduce((s, r) => s + r.despesaTotal, 0),
+      maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0),
+      materiaPrima: recs.reduce((s, r) => s + r.materiaPrima, 0),
     }));
   }, [filtered]);
 
@@ -164,7 +179,7 @@ export default function AdministrativoDashboard() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {admVsRegional.map((item, i) => (
+          {(selectedRegional ? admVsRegional.filter(i => i.regional === selectedRegional) : admVsRegional).map((item, i) => (
             <motion.div
               key={item.regional}
               initial={{ opacity: 0, y: 10 }}
@@ -182,7 +197,7 @@ export default function AdministrativoDashboard() {
           ))}
         </div>
         <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={admVsRegional}>
+          <BarChart data={selectedRegional ? admVsRegional.filter(i => i.regional === selectedRegional) : admVsRegional}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
             <XAxis dataKey="regional" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
             <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
@@ -217,7 +232,7 @@ export default function AdministrativoDashboard() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass-card rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Comparativo de Despesa por Unidade ADM</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Mão de Obra e Matéria Prima por Unidade ADM</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={unitData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
@@ -225,7 +240,9 @@ export default function AdministrativoDashboard() {
             <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
             <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
               formatter={(v: number) => formatCurrency(v)} />
-            <Bar dataKey="despesa" name="Despesa Total" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+            <Legend />
+            <Bar dataKey="maoDeObra" name="Mão de Obra" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="materiaPrima" name="Matéria Prima" fill="hsl(162 72% 46%)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </motion.div>
