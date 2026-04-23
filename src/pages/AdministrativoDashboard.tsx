@@ -52,11 +52,18 @@ export default function AdministrativoDashboard() {
     });
   }, [admRecords, operationalRecords]);
 
-  // Regional derivada da unidade ADM selecionada (ex.: ADM/ES -> ES)
+  // Mapeamento sigla ADM -> nome da regional operacional na planilha
+  const ADM_TO_REGIONAL: Record<string, string> = {
+    'ADM/ES': 'ESPIRITO SANTO',
+    'ADM/TO': 'TOCANTINS',
+    'ADM/GO': 'GOIAS',
+    'ADM/PR': 'PARANA',
+  };
+
+  // Regional derivada da unidade ADM selecionada (ex.: ADM/ES -> ESPIRITO SANTO)
   const selectedRegional = useMemo(() => {
     if (selectedUnit === 'all') return null;
-    const parts = selectedUnit.split('/');
-    return parts[1] || null;
+    return ADM_TO_REGIONAL[selectedUnit] || null;
   }, [selectedUnit]);
 
   // Evolução mensal do % ADM/Receita Regional
@@ -161,8 +168,7 @@ export default function AdministrativoDashboard() {
     const opByRegional = groupBy(operationalRecords, 'regional');
     return admUnits
       .map(unidade => {
-        const parts = unidade.split('/');
-        const regional = parts[1] || unidade;
+        const regional = ADM_TO_REGIONAL[unidade] || unidade;
         const receita = (opByRegional[regional] || []).reduce((s, r) => s + r.receitaBruta, 0);
         return { unidade, regional, receita };
       })
