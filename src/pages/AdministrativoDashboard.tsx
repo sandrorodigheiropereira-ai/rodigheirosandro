@@ -151,21 +151,23 @@ export default function AdministrativoDashboard() {
     ? ((receitaTotalRegionais - metrics.despesaTotal) / receitaTotalRegionais) * 100
     : 0;
 
-  // Detalhamento por unidade operacional (independente)
+  // Receita Total por Unidade ADM — para cada unidade administrativa (ex: ADM/ES),
+  // soma a receita bruta operacional da sua regional correspondente (ex: regional ES).
+  // Cálculo independente — não compartilha estado com outros dashboards.
   const receitaPorUnidade = useMemo(() => {
-    const regionaisAdm = selectedRegional
-      ? [selectedRegional]
-      : [...new Set(admRecords.map(r => r.regional))];
-    const scope = operationalRecords.filter(r => regionaisAdm.includes(r.regional));
-    const byUnit = groupBy(scope, 'unidade');
-    return Object.entries(byUnit)
-      .map(([unidade, recs]) => ({
-        unidade,
-        regional: recs[0].regional,
-        receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
-      }))
+    const admUnits = selectedUnit === 'all'
+      ? [...new Set(admRecords.map(r => r.unidade))]
+      : [selectedUnit];
+    const opByRegional = groupBy(operationalRecords, 'regional');
+    return admUnits
+      .map(unidade => {
+        const parts = unidade.split('/');
+        const regional = parts[1] || unidade;
+        const receita = (opByRegional[regional] || []).reduce((s, r) => s + r.receitaBruta, 0);
+        return { unidade, regional, receita };
+      })
       .sort((a, b) => b.receita - a.receita);
-  }, [operationalRecords, admRecords, selectedRegional]);
+  }, [operationalRecords, admRecords, selectedUnit]);
 
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
