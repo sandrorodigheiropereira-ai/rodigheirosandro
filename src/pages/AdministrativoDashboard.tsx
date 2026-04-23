@@ -306,8 +306,8 @@ export default function AdministrativoDashboard() {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Mão de Obra vs Matéria Prima</h3>
         {(() => {
           const pieData = [
-            { name: 'Mão de Obra', value: metrics.maoDeObra },
-            { name: 'Matéria Prima', value: metrics.materiaPrima },
+            { name: 'Mão de Obra', value: filtered.reduce((s, r) => s + r.maoDeObra, 0) },
+            { name: 'Matéria Prima', value: filtered.reduce((s, r) => s + r.materiaPrima, 0) },
           ];
           const total = pieData.reduce((s, d) => s + d.value, 0);
           const COLORS = ['hsl(210 90% 60%)', 'hsl(162 72% 46%)'];
