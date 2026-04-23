@@ -132,7 +132,6 @@ export default function AdministrativoDashboard() {
   const availableUnits = useMemo(() => [...new Set(admRecordsAll.map(r => r.unidade))].sort(), [admRecordsAll]);
 
   const metrics = calcMetrics(filtered);
-  const margemAdm = metrics.receitaBruta > 0 ? (metrics.despesaTotal / metrics.receitaBruta) * 100 : 0;
 
   // Receita Total (independente) — soma a receita bruta das unidades operacionais
   // das regionais correspondentes às ADMs presentes neste dashboard.
