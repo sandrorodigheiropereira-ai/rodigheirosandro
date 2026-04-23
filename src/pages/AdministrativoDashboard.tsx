@@ -177,11 +177,19 @@ export default function AdministrativoDashboard() {
 
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
+    // Receita da regional correspondente por mês (mesma lógica do KPI Margem)
+    const regionaisAdmAll = selectedRegional
+      ? [selectedRegional]
+      : [...new Set(admRecordsAll.map(r => r.regional))];
+    const opScope = operationalRecordsAll.filter(r => regionaisAdmAll.includes(r.regional));
+    const opByMonth = groupBy(opScope, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
       const m = calcMetrics(recs);
-      return { mes: month, receita: m.receitaBruta, despesa: m.despesaTotal, margem: m.margem };
+      const receitaRegMes = (opByMonth[month] || []).reduce((s, r) => s + r.receitaBruta, 0);
+      const margem = receitaRegMes > 0 ? (m.despesaTotal / receitaRegMes) * 100 : 0;
+      return { mes: month, receita: m.receitaBruta, despesa: m.despesaTotal, margem };
     });
-  }, [filtered]);
+  }, [filtered, admRecordsAll, operationalRecordsAll, selectedRegional]);
 
   const unitData = useMemo(() => {
     const byUnit = groupBy(filtered, 'unidade');
@@ -329,7 +337,7 @@ export default function AdministrativoDashboard() {
               formatter={(v: number, name: string) => name === 'margem' ? `${v.toFixed(1)}%` : formatCurrency(v)} />
             <Legend />
             <Line yAxisId="left" type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={{ r: 4 }} />
-            <Line yAxisId="right" type="monotone" dataKey="margem" name="Margem (%)" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={{ r: 4 }} />
+            <Line yAxisId="right" type="monotone" dataKey="margem" name="Margem (%)" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={{ r: 4 }} label={{ position: 'top', fill: 'hsl(162 72% 60%)', fontSize: 11, formatter: (v: number) => `${v.toFixed(1)}%` }} />
           </LineChart>
         </ResponsiveContainer>
       </motion.div>
