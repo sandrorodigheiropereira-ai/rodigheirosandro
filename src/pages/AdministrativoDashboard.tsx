@@ -7,7 +7,7 @@ import { filterOnlyAdm, filterOutAdm, ADM_UNITS } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -301,6 +301,65 @@ export default function AdministrativoDashboard() {
         <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
         <KpiCard title="Margem (%)" value={margemAdm} format="percent" subtitle="\n" icon={<Percent className="w-5 h-5" />} delay={0.2} />
       </div>
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Mão de Obra vs Matéria Prima</h3>
+        {(() => {
+          const pieData = [
+            { name: 'Mão de Obra', value: filtered.reduce((s, r) => s + r.maoDeObra, 0) },
+            { name: 'Matéria Prima', value: filtered.reduce((s, r) => s + r.materiaPrima, 0) },
+          ];
+          const total = pieData.reduce((s, d) => s + d.value, 0);
+          const COLORS = ['hsl(210 90% 60%)', 'hsl(162 72% 46%)'];
+          if (total <= 0) {
+            return <p className="text-sm text-muted-foreground">Sem dados para o filtro atual.</p>;
+          }
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    innerRadius={50}
+                    paddingAngle={2}
+                    label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
+                  >
+                    {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+                    formatter={(v: number) => formatCurrency(v)}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-3">
+                {pieData.map((d, i) => (
+                  <div key={d.name} className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[i] }} />
+                      <span className="text-sm font-medium">{d.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-display font-bold">{formatCurrency(d.value)}</p>
+                      <p className="text-xs text-muted-foreground">{((d.value / total) * 100).toFixed(1)}%</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Total</span>
+                  <span className="text-sm font-display font-bold">{formatCurrency(total)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-5">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita Total por Unidade ADM (regional correspondente)</h3>
