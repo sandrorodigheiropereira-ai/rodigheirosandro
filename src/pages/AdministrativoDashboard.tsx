@@ -337,7 +337,7 @@ export default function AdministrativoDashboard() {
               formatter={(v: number, name: string) => name === 'margem' ? `${v.toFixed(1)}%` : formatCurrency(v)} />
             <Legend />
             <Line yAxisId="left" type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={{ r: 4 }} />
-            <Line yAxisId="right" type="monotone" dataKey="margem" name="Margem (%)" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={{ r: 4 }} />
+            <Line yAxisId="right" type="monotone" dataKey="margem" name="Margem (%)" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={{ r: 4 }} label={{ position: 'top', fill: 'hsl(162 72% 60%)', fontSize: 11, formatter: (v: number) => `${v.toFixed(1)}%` }} />
           </LineChart>
         </ResponsiveContainer>
       </motion.div>
