@@ -289,7 +289,7 @@ export default function AdministrativoDashboard() {
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita por Unidade — Regionais ADM</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita Total por Unidade ADM (regional correspondente)</h3>
         {receitaPorUnidade.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sem dados para o filtro atual.</p>
         ) : (
