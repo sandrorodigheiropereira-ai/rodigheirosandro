@@ -153,9 +153,9 @@ export default function AdministrativoDashboard() {
       .reduce((s, r) => s + r.receitaBruta, 0);
   }, [operationalRecords, admRecords, selectedRegional]);
 
-  // Margem (%) = (Receita Total Regionais − Despesa ADM) / Receita Total Regionais × 100
+  // Margem (%) = Despesa Total ÷ Receita Total da Regional × 100
   const margemAdm = receitaTotalRegionais > 0
-    ? ((receitaTotalRegionais - metrics.despesaTotal) / receitaTotalRegionais) * 100
+    ? (metrics.despesaTotal / receitaTotalRegionais) * 100
     : 0;
 
   // Receita Total por Unidade ADM — para cada unidade administrativa (ex: ADM/ES),
@@ -291,7 +291,7 @@ export default function AdministrativoDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KpiCard title="Receita Total" value={receitaTotalRegionais} format="currency" subtitle="Soma operacional das regionais ADM (independente)" icon={<TrendingUp className="w-5 h-5" />} delay={0.05} />
         <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Margem (%)" value={margemAdm} format="percent" subtitle="(Receita Total − Despesa) ÷ Receita Total × 100" icon={<Percent className="w-5 h-5" />} delay={0.2} />
+        <KpiCard title="Margem (%)" value={margemAdm} format="percent" subtitle="Despesa Total ÷ Receita Total da Regional × 100" icon={<Percent className="w-5 h-5" />} delay={0.2} />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-5">
