@@ -134,6 +134,35 @@ export default function AdministrativoDashboard() {
   const metrics = calcMetrics(filtered);
   const margemAdm = metrics.receitaBruta > 0 ? (metrics.despesaTotal / metrics.receitaBruta) * 100 : 0;
 
+  // Receita Total (independente) — soma a receita bruta das unidades operacionais
+  // das regionais correspondentes às ADMs presentes neste dashboard.
+  // Respeita o filtro de mês e, se uma unidade ADM estiver selecionada, restringe à regional dela.
+  // Este cálculo é isolado: NÃO compartilha estado com os demais dashboards.
+  const receitaTotalRegionais = useMemo(() => {
+    const regionaisAdm = selectedRegional
+      ? [selectedRegional]
+      : [...new Set(admRecords.map(r => r.regional))];
+    return operationalRecords
+      .filter(r => regionaisAdm.includes(r.regional))
+      .reduce((s, r) => s + r.receitaBruta, 0);
+  }, [operationalRecords, admRecords, selectedRegional]);
+
+  // Detalhamento por unidade operacional (independente)
+  const receitaPorUnidade = useMemo(() => {
+    const regionaisAdm = selectedRegional
+      ? [selectedRegional]
+      : [...new Set(admRecords.map(r => r.regional))];
+    const scope = operationalRecords.filter(r => regionaisAdm.includes(r.regional));
+    const byUnit = groupBy(scope, 'unidade');
+    return Object.entries(byUnit)
+      .map(([unidade, recs]) => ({
+        unidade,
+        regional: recs[0].regional,
+        receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
+      }))
+      .sort((a, b) => b.receita - a.receita);
+  }, [operationalRecords, admRecords, selectedRegional]);
+
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
@@ -247,10 +276,34 @@ export default function AdministrativoDashboard() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <KpiCard title="Receita Total" value={receitaTotalRegionais} format="currency" subtitle="Soma operacional das regionais ADM (independente)" icon={<TrendingUp className="w-5 h-5" />} delay={0.05} />
         <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
         <KpiCard title="Margem (%)" value={margemAdm} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
       </div>
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita por Unidade — Regionais ADM</h3>
+        {receitaPorUnidade.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem dados para o filtro atual.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {receitaPorUnidade.map((u, i) => (
+              <motion.div
+                key={u.unidade}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.03 * i }}
+                className="rounded-lg border border-border bg-secondary/40 p-3"
+              >
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{u.regional}</p>
+                <p className="text-sm font-medium mt-0.5">{u.unidade}</p>
+                <p className="text-lg font-display font-bold mt-1">{formatCurrency(u.receita)}</p>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Evolução Mensal — Despesa vs Margem</h3>
