@@ -146,6 +146,11 @@ export default function AdministrativoDashboard() {
       .reduce((s, r) => s + r.receitaBruta, 0);
   }, [operationalRecords, admRecords, selectedRegional]);
 
+  // Margem (%) = (Receita Total Regionais − Despesa ADM) / Receita Total Regionais × 100
+  const margemAdm = receitaTotalRegionais > 0
+    ? ((receitaTotalRegionais - metrics.despesaTotal) / receitaTotalRegionais) * 100
+    : 0;
+
   // Detalhamento por unidade operacional (independente)
   const receitaPorUnidade = useMemo(() => {
     const regionaisAdm = selectedRegional
