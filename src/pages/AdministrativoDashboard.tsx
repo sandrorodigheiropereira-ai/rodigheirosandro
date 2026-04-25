@@ -376,6 +376,64 @@ export default function AdministrativoDashboard() {
             </div>
           );
         })()}
+
+        {/* 2ª camada: Variação % mês atual vs mês anterior */}
+        {(() => {
+          const scopeAll = selectedUnit === 'all' ? admRecordsAll : admRecordsAll.filter(r => r.unidade === selectedUnit);
+          const monthsAvail = [...new Set(scopeAll.map(r => r.data))].filter(Boolean).sort();
+          const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1];
+          const refIdx = monthsAvail.indexOf(refMonth);
+          const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null;
+          const sumBy = (mes: string | null, key: 'maoDeObra' | 'materiaPrima') =>
+            mes ? scopeAll.filter(r => r.data === mes).reduce((s, r) => s + r[key], 0) : 0;
+          const variations = [
+            { name: 'Mão de Obra', color: 'hsl(210 90% 60%)', atual: sumBy(refMonth, 'maoDeObra'), anterior: sumBy(prevMonth, 'maoDeObra') },
+            { name: 'Matéria Prima', color: 'hsl(162 72% 46%)', atual: sumBy(refMonth, 'materiaPrima'), anterior: sumBy(prevMonth, 'materiaPrima') },
+          ].map(v => ({
+            ...v,
+            variacao: v.anterior > 0 ? ((v.atual - v.anterior) / v.anterior) * 100 : null,
+          }));
+
+          return (
+            <div className="mt-5 pt-5 border-t border-border/60">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Variação Mês a Mês {refMonth ? `(${prevMonth ?? '—'} → ${refMonth})` : ''}
+              </h4>
+              {!prevMonth ? (
+                <p className="text-sm text-muted-foreground">Sem mês anterior disponível para comparação.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {variations.map((v) => {
+                    const isUp = v.variacao !== null && v.variacao > 0;
+                    const isDown = v.variacao !== null && v.variacao < 0;
+                    const trendColor = isUp ? 'text-destructive' : isDown ? 'text-success' : 'text-muted-foreground';
+                    const TrendIcon = isUp ? TrendingUp : isDown ? TrendingDown : Percent;
+                    return (
+                      <div key={v.name} className="rounded-lg border border-border bg-secondary/40 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: v.color }} />
+                          <span className="text-sm font-medium">{v.name}</span>
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <div className="space-y-0.5">
+                            <p className="text-[11px] text-muted-foreground">Anterior: {formatCurrency(v.anterior)}</p>
+                            <p className="text-[11px] text-muted-foreground">Atual: {formatCurrency(v.atual)}</p>
+                          </div>
+                          <div className={`flex items-center gap-1 text-sm font-display font-bold ${trendColor}`}>
+                            <TrendIcon className="w-4 h-4" />
+                            <span>
+                              {v.variacao === null ? '—' : `${v.variacao > 0 ? '+' : ''}${v.variacao.toFixed(1)}%`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-5">
