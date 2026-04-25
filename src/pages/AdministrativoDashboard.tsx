@@ -312,22 +312,6 @@ export default function AdministrativoDashboard() {
           const total = pieData.reduce((s, d) => s + d.value, 0);
           const COLORS = ['hsl(210 90% 60%)', 'hsl(162 72% 46%)'];
 
-          // 2ª camada: variação % mês atual vs mês anterior (respeita unidade, ignora filtro de mês)
-          const scopeAll = selectedUnit === 'all' ? admRecordsAll : admRecordsAll.filter(r => r.unidade === selectedUnit);
-          const monthsAvail = [...new Set(scopeAll.map(r => r.data))].filter(Boolean).sort();
-          const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1];
-          const refIdx = monthsAvail.indexOf(refMonth);
-          const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null;
-          const sumBy = (mes: string | null, key: 'maoDeObra' | 'materiaPrima') =>
-            mes ? scopeAll.filter(r => r.data === mes).reduce((s, r) => s + r[key], 0) : 0;
-          const variations = [
-            { name: 'Mão de Obra', atual: sumBy(refMonth, 'maoDeObra'), anterior: sumBy(prevMonth, 'maoDeObra') },
-            { name: 'Matéria Prima', atual: sumBy(refMonth, 'materiaPrima'), anterior: sumBy(prevMonth, 'materiaPrima') },
-          ].map(v => ({
-            ...v,
-            variacao: v.anterior > 0 ? ((v.atual - v.anterior) / v.anterior) * 100 : null,
-          }));
-
           if (total <= 0) {
             return <p className="text-sm text-muted-foreground">Sem dados para o filtro atual.</p>;
           }
