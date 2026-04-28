@@ -100,17 +100,31 @@ export default function ConsolidadoDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="lg:col-span-2 glass-card rounded-xl p-5">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Evolução Mensal</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
-              <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
-              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+          <ResponsiveContainer width="100%" height={320}>
+            <AreaChart data={monthlyData} margin={{ top: 30, right: 20, left: 0, bottom: 5 }}>
+              <defs>
+                <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(210 90% 60%)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="hsl(210 90% 60%)" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorDespesa" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(8 85% 55%)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="hsl(8 85% 55%)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" vertical={false} />
+              <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
                 formatter={(v: number) => formatCurrency(v)} />
-              <Legend />
-              <Line type="monotone" dataKey="receita" name="Receita" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
-            </LineChart>
+              <Legend iconType="circle" wrapperStyle={{ paddingTop: 8 }} />
+              <Area type="monotone" dataKey="receita" name="Receita" stroke="hsl(210 90% 60%)" strokeWidth={2.5} fill="url(#colorReceita)" dot={{ r: 4, fill: 'hsl(210 90% 60%)', strokeWidth: 0 }} activeDot={{ r: 6 }}>
+                <LabelList dataKey="receita" position="top" formatter={(v: number) => `${(v / 1000).toFixed(0)}k`} style={{ fill: 'hsl(210 90% 70%)', fontSize: 10, fontWeight: 600 }} />
+              </Area>
+              <Area type="monotone" dataKey="despesa" name="Despesa" stroke="hsl(8 85% 55%)" strokeWidth={2.5} fill="url(#colorDespesa)" dot={{ r: 4, fill: 'hsl(8 85% 55%)', strokeWidth: 0 }} activeDot={{ r: 6 }}>
+                <LabelList dataKey="despesa" position="bottom" formatter={(v: number) => `${(v / 1000).toFixed(0)}k`} style={{ fill: 'hsl(8 85% 70%)', fontSize: 10, fontWeight: 600 }} />
+              </Area>
+            </AreaChart>
           </ResponsiveContainer>
         </motion.div>
 
