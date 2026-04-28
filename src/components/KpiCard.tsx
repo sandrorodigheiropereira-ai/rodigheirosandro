@@ -28,13 +28,13 @@ export function KpiCard({ title, value, format, change, subtitle, icon, delay = 
       className="glass-card rounded-xl p-5 hover:border-primary/30 transition-colors"
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-muted-foreground">{title}</span>
+        <span className="text-xs font-medium text-muted-foreground">{title}</span>
         {icon && <span className="text-primary opacity-70">{icon}</span>}
       </div>
-      <div className="text-2xl font-display font-bold tracking-tight">{formatted}</div>
-      {subtitle && <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>}
+      <div className="text-xl font-display font-bold tracking-tight">{formatted}</div>
+      {subtitle && <div className="text-[10px] text-muted-foreground mt-1">{subtitle}</div>}
       {change !== undefined && (
-        <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${trendColor}`}>
+        <div className={`flex items-center gap-1 mt-2 text-[10px] font-medium ${trendColor}`}>
           <TrendIcon className="w-3 h-3" />
           <span>{change > 0 ? '+' : ''}{change.toFixed(1)}% vs mês anterior</span>
         </div>
