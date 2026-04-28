@@ -46,14 +46,14 @@
     --sidebar-ring: 140 35% 55%;
 
     /* Financial semantic tokens */
-    --success: 140 40% 58%;
-    --success-foreground: 140 30% 15%;
-    --warning: 35 85% 70%;
-    --warning-foreground: 35 40% 20%;
-    --danger: 8 70% 70%;
-    --danger-foreground: 8 30% 20%;
-    --info: 25 15% 55%;
-    --info-foreground: 25 15% 98%;
+   --success: 140 65% 45%;
+   --success-foreground: 140 30% 98%;
+   --warning: 30 95% 55%;
+   --warning-foreground: 30 40% 15%;
+   --danger: 8 85% 55%;
+   --danger-foreground: 8 30% 98%;
+   --info: 25 80% 50%;
+   --info-foreground: 25 15% 98%;
 
     --chart-1: 140 35% 60%;
     --chart-2: 24 80% 72%;
