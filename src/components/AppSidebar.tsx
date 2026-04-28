@@ -21,6 +21,7 @@ const items = [
 
 const externalItems = [
   { title: 'Vialex', url: 'https://vialexpro.base44.app/dashboard', icon: ExternalLink },
+  { title: 'AtomoDash', url: 'https://atomodash.app/pt-br/?d=216', icon: ExternalLink },
 ];
 
 export function AppSidebar() {
