@@ -73,12 +73,7 @@ export function AppSidebar() {
                     <a
                       href={item.url}
                       target="_blank"
-                      rel="noopener noreferrer external"
-                      referrerPolicy="no-referrer"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.open(item.url, '_blank', 'noopener,noreferrer');
-                      }}
+                      rel="noopener noreferrer"
                       className="hover:bg-sidebar-accent/50"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
