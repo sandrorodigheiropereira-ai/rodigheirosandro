@@ -1,4 +1,4 @@
-import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -17,6 +17,10 @@ const items = [
   { title: 'Regional', url: '/regional', icon: Map },
   { title: 'Unidade', url: '/unidade', icon: Building2 },
   { title: 'Administrativo', url: '/administrativo', icon: Briefcase },
+];
+
+const externalItems = [
+  { title: 'Vialex', url: 'https://vialexpro.base44.app/dashboard', icon: ExternalLink },
 ];
 
 export function AppSidebar() {
@@ -51,6 +55,29 @@ export function AppSidebar() {
                       <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Painéis Externos</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {externalItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:bg-sidebar-accent/50"
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
