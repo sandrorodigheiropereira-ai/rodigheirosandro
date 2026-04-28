@@ -7,7 +7,7 @@ import { RankingPanel } from '@/components/RankingPanel';
 import { calcMetrics, generateAlerts, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
 import { filterOutAdm } from '@/lib/constants';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart, LabelList } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
