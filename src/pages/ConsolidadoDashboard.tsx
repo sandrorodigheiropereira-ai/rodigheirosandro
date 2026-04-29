@@ -38,6 +38,7 @@ export default function ConsolidadoDashboard() {
   const metrics = calcMetrics(currentData, prevData);
   const alerts = generateAlerts(filtered);
   const ranking = rankUnidades(filtered);
+  const rankingMargem = rankUnidades(filtered, 'margem');
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
@@ -131,24 +132,25 @@ export default function ConsolidadoDashboard() {
         <AlertsPanel alerts={alerts} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="lg:col-span-2 glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita por Regional</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={regionalData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
-              <XAxis dataKey="regional" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
-              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
-                formatter={(v: number) => formatCurrency(v)} />
-              <Legend iconType="circle" wrapperStyle={{ paddingTop: 8 }} />
-              <Bar dataKey="receita" name="Receita" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="despesa" name="Despesa" fill="hsl(8 85% 55%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass-card rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita por Regional</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={regionalData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+            <XAxis dataKey="regional" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+              formatter={(v: number) => formatCurrency(v)} />
+            <Legend iconType="circle" wrapperStyle={{ paddingTop: 8 }} />
+            <Bar dataKey="receita" name="Receita" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="despesa" name="Despesa" fill="hsl(8 85% 55%)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
 
-        <RankingPanel data={ranking} title="Ranking de Unidades" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RankingPanel data={ranking} format="currency" title="Ranking Geral por Receita" />
+        <RankingPanel data={rankingMargem} format="percent" title="Ranking Geral por Margem" />
       </div>
     </div>
   );
