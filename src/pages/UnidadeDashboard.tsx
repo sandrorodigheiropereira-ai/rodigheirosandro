@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { DollarSign, ShoppingCart, Users, TrendingUp, TrendingDown, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
-import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
+import { RankingPanel } from '@/components/RankingPanel';
+import { calcMetrics, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
