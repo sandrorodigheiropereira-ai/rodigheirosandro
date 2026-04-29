@@ -114,15 +114,15 @@ export default function ConsolidadoDashboard() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" vertical={false} />
               <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => `${Math.round(v / 1000).toLocaleString('pt-BR')}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
                 formatter={(v: number) => formatCurrency(v)} />
               <Legend iconType="circle" wrapperStyle={{ paddingTop: 8 }} />
               <Area type="monotone" dataKey="receita" name="Receita" stroke="hsl(210 90% 60%)" strokeWidth={2.5} fill="url(#colorReceita)" dot={{ r: 4, fill: 'hsl(210 90% 60%)', strokeWidth: 0 }} activeDot={{ r: 6 }}>
-                <LabelList dataKey="receita" position="top" formatter={(v: number) => `${(v / 1000).toFixed(0)}k`} style={{ fill: 'hsl(210 90% 70%)', fontSize: 10, fontWeight: 600 }} />
+                <LabelList dataKey="receita" position="top" formatter={(v: number) => `${Math.round(v / 1000).toLocaleString('pt-BR')}k`} style={{ fill: 'hsl(210 90% 70%)', fontSize: 10, fontWeight: 600 }} />
               </Area>
               <Area type="monotone" dataKey="despesa" name="Despesa" stroke="hsl(8 85% 55%)" strokeWidth={2.5} fill="url(#colorDespesa)" dot={{ r: 4, fill: 'hsl(8 85% 55%)', strokeWidth: 0 }} activeDot={{ r: 6 }}>
-                <LabelList dataKey="despesa" position="bottom" formatter={(v: number) => `${(v / 1000).toFixed(0)}k`} style={{ fill: 'hsl(8 85% 70%)', fontSize: 10, fontWeight: 600 }} />
+                <LabelList dataKey="despesa" position="bottom" formatter={(v: number) => `${Math.round(v / 1000).toLocaleString('pt-BR')}k`} style={{ fill: 'hsl(8 85% 70%)', fontSize: 10, fontWeight: 600 }} />
               </Area>
             </AreaChart>
           </ResponsiveContainer>
