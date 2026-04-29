@@ -39,17 +39,17 @@ export function MultiSelectUnidade({ options, selected, onChange, allLabel = 'To
   };
 
   const label = isAll
-    ? 'Todas'
+    ? allLabel
     : selected.length === 1
       ? selected[0]
-      : `${selected.length} selecionadas`;
+      : `${selected.length} ${pluralLabel}`;
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex items-center justify-between w-[200px] h-9 px-3 py-2 text-sm rounded-md border border-border bg-secondary text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+        className={cn('flex items-center justify-between h-9 px-3 py-2 text-sm rounded-md border border-border bg-secondary text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring', width)}
       >
         <span className="truncate">{label}</span>
         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -66,7 +66,7 @@ export function MultiSelectUnidade({ options, selected, onChange, allLabel = 'To
             <div className={cn('h-4 w-4 rounded-sm border border-primary flex items-center justify-center', isAll && 'bg-primary')}>
               {isAll && <Check className="h-3 w-3 text-primary-foreground" />}
             </div>
-            Todas
+            {allLabel}
           </div>
           {options.map(opt => {
             const checked = selected.includes(opt);
