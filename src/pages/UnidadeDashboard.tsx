@@ -43,8 +43,9 @@ export default function UnidadeDashboard() {
     });
   }, [filtered]);
 
-  const rankingReceita = useMemo(() => rankUnidades(allRecords, 'receitaBruta'), [allRecords]);
-  const rankingMargem = useMemo(() => rankUnidades(allRecords, 'margem'), [allRecords]);
+  const recordsRegional = useMemo(() => allRecords.filter(r => r.regional === regional), [allRecords, regional]);
+  const rankingReceita = useMemo(() => rankUnidades(recordsRegional, 'receitaBruta'), [recordsRegional]);
+  const rankingMargem = useMemo(() => rankUnidades(recordsRegional, 'margem'), [recordsRegional]);
 
 
   if (isLoading) {
