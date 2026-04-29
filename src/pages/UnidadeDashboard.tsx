@@ -41,6 +41,8 @@ export default function UnidadeDashboard() {
       const m = calcMetrics(recs);
       return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal };
     });
+  }, [filtered]);
+
   const rankingReceita = useMemo(() => rankUnidades(allRecords, 'receitaBruta'), [allRecords]);
   const rankingMargem = useMemo(() => rankUnidades(allRecords, 'margem'), [allRecords]);
 
