@@ -98,6 +98,11 @@ export default function UnidadeDashboard() {
         <KpiCard title="Margem (%)" value={metrics.margem} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.4} />
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <RankingPanel data={rankingReceita} format="currency" title="Ranking por Receita" />
+        <RankingPanel data={rankingMargem} format="percent" title="Ranking por Margem" />
+      </div>
+
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-5">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Mão de Obra vs Matéria Prima</h3>
         {(() => {
