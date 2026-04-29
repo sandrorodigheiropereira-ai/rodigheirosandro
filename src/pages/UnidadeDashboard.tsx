@@ -100,8 +100,8 @@ export default function UnidadeDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RankingPanel data={rankingReceita} format="currency" title="Ranking por Receita" />
-        <RankingPanel data={rankingMargem} format="percent" title="Ranking por Margem" />
+        <RankingPanel data={rankingReceita} format="currency" title={`Ranking por Receita • ${regional}`} />
+        <RankingPanel data={rankingMargem} format="percent" title={`Ranking por Margem • ${regional}`} />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-5">
