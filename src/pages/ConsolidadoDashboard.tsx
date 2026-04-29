@@ -149,7 +149,12 @@ export default function ConsolidadoDashboard() {
           </ResponsiveContainer>
         </motion.div>
 
-        <RankingPanel data={ranking} title="Ranking de Unidades" />
+        <RankingPanel data={ranking} title="Ranking por Receita" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RankingPanel data={ranking} format="currency" title="Ranking Geral por Receita" />
+        <RankingPanel data={rankingMargem} format="percent" title="Ranking Geral por Margem" />
       </div>
     </div>
   );
