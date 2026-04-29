@@ -119,7 +119,30 @@ export default function UnidadeDashboard() {
                     outerRadius={90}
                     innerRadius={50}
                     paddingAngle={2}
-                    label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
+                    label={({ value, x, y, cx }) => (
+                      <g>
+                        <rect
+                          x={x > cx ? x - 2 : x - 62}
+                          y={y - 10}
+                          width={64}
+                          height={20}
+                          rx={4}
+                          fill="hsl(0 0% 96%)"
+                          stroke="hsl(0 0% 80%)"
+                        />
+                        <text
+                          x={x > cx ? x + 30 : x - 30}
+                          y={y + 4}
+                          fill="#000"
+                          fontSize={11}
+                          fontWeight={600}
+                          textAnchor="middle"
+                        >
+                          {formatCurrency(value as number)}
+                        </text>
+                      </g>
+                    )}
+                    labelLine={{ stroke: 'hsl(0 0% 60%)' }}
                   >
                     {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
                   </Pie>
