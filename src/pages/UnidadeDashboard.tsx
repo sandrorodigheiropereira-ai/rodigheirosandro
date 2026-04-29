@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { DollarSign, ShoppingCart, Users, TrendingUp, TrendingDown, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
-import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
+import { RankingPanel } from '@/components/RankingPanel';
+import { calcMetrics, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
@@ -41,6 +42,10 @@ export default function UnidadeDashboard() {
       return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal };
     });
   }, [filtered]);
+
+  const rankingReceita = useMemo(() => rankUnidades(allRecords, 'receitaBruta'), [allRecords]);
+  const rankingMargem = useMemo(() => rankUnidades(allRecords, 'margem'), [allRecords]);
+
 
   if (isLoading) {
     return (
@@ -91,6 +96,11 @@ export default function UnidadeDashboard() {
         <KpiCard title="Mão de Obra" value={metrics.maoDeObraPercent} format="percent" icon={<Users className="w-5 h-5" />} delay={0.2} />
         <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.3} />
         <KpiCard title="Margem (%)" value={metrics.margem} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.4} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <RankingPanel data={rankingReceita} format="currency" title="Ranking por Receita" />
+        <RankingPanel data={rankingMargem} format="percent" title="Ranking por Margem" />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-5">
