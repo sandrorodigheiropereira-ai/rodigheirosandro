@@ -110,7 +110,39 @@ export default function RegionalDashboard() {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Distribuição de Custos</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
-              <Pie data={costData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3} dataKey="value">
+              <Pie
+                data={costData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={90}
+                paddingAngle={3}
+                dataKey="value"
+                label={({ value, x, y, cx }) => (
+                  <g>
+                    <rect
+                      x={x > cx ? x - 2 : x - 62}
+                      y={y - 10}
+                      width={64}
+                      height={20}
+                      rx={4}
+                      fill="hsl(0 0% 96%)"
+                      stroke="hsl(0 0% 80%)"
+                    />
+                    <text
+                      x={x > cx ? x + 30 : x - 30}
+                      y={y + 4}
+                      fill="#000"
+                      fontSize={11}
+                      fontWeight={600}
+                      textAnchor="middle"
+                    >
+                      {formatCurrency(value as number)}
+                    </text>
+                  </g>
+                )}
+                labelLine={{ stroke: 'hsl(0 0% 60%)' }}
+              >
                 {costData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
               </Pie>
               <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
