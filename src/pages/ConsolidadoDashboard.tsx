@@ -114,7 +114,7 @@ export default function ConsolidadoDashboard() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" vertical={false} />
               <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => `${Math.round(v / 1000).toLocaleString('pt-BR')}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
                 formatter={(v: number) => formatCurrency(v)} />
               <Legend iconType="circle" wrapperStyle={{ paddingTop: 8 }} />
