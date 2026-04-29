@@ -5,32 +5,44 @@ import { getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData'
 import { MultiSelectUnidade } from '@/components/MultiSelectUnidade';
 
 interface FiltersBarProps {
-  periodo: string;
+  periodo: string | string[];
   regional: string;
   unidade: string | string[];
-  onPeriodoChange: (v: string) => void;
+  onPeriodoChange: (v: string | string[]) => void;
   onRegionalChange: (v: string) => void;
   onUnidadeChange: (v: string | string[]) => void;
   records: FinancialRecord[];
   multiSelectUnidade?: boolean;
+  multiSelectPeriodo?: boolean;
 }
 
-export function FiltersBar({ periodo, regional, unidade, onPeriodoChange, onRegionalChange, onUnidadeChange, records, multiSelectUnidade }: FiltersBarProps) {
+export function FiltersBar({ periodo, regional, unidade, onPeriodoChange, onRegionalChange, onUnidadeChange, records, multiSelectUnidade, multiSelectPeriodo }: FiltersBarProps) {
   const meses = useMemo(() => [...new Set(records.map(r => r.data))].sort(), [records]);
   const regionais = useMemo(() => getRegionaisFromData(records), [records]);
   const unidades = useMemo(() => getUnidadesFromData(records, regional === 'all' ? undefined : regional), [records, regional]);
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <Select value={periodo} onValueChange={onPeriodoChange}>
-        <SelectTrigger className="w-[140px] bg-secondary border-border">
-          <SelectValue placeholder="Período" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos</SelectItem>
-          {meses.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      {multiSelectPeriodo ? (
+        <MultiSelectUnidade
+          options={meses}
+          selected={Array.isArray(periodo) ? periodo : periodo === 'all' ? [] : [periodo]}
+          onChange={(sel) => onPeriodoChange(sel)}
+          allLabel="Todos os meses"
+          pluralLabel="meses"
+          width="w-[180px]"
+        />
+      ) : (
+        <Select value={typeof periodo === 'string' ? periodo : 'all'} onValueChange={onPeriodoChange}>
+          <SelectTrigger className="w-[140px] bg-secondary border-border">
+            <SelectValue placeholder="Período" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {meses.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      )}
 
       <Select value={regional} onValueChange={(v) => { onRegionalChange(v); onUnidadeChange('all'); }}>
         <SelectTrigger className="w-[160px] bg-secondary border-border">
