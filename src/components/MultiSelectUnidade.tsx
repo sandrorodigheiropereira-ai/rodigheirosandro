@@ -7,9 +7,13 @@ interface MultiSelectUnidadeProps {
   options: string[];
   selected: string[];
   onChange: (selected: string[]) => void;
+  allLabel?: string;
+  singularLabel?: string;
+  pluralLabel?: string;
+  width?: string;
 }
 
-export function MultiSelectUnidade({ options, selected, onChange }: MultiSelectUnidadeProps) {
+export function MultiSelectUnidade({ options, selected, onChange, allLabel = 'Todas', singularLabel, pluralLabel = 'selecionadas', width = 'w-[200px]' }: MultiSelectUnidadeProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
