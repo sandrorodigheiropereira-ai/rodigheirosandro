@@ -1,5 +1,8 @@
-import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink, LogOut } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { CompanyLogo } from '@/components/CompanyLogo';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
