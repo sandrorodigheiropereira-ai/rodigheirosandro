@@ -22,6 +22,8 @@ const items = [
 const externalItems = [
   { title: 'Vialex', url: 'https://vialexpro.base44.app/dashboard', icon: ExternalLink },
   { title: 'AtomoDash', url: 'https://atomodash.app/pt-br/', icon: ExternalLink },
+  { title: 'Siscard', url: 'https://www.siscard.maissabor.ind.br/login', icon: ExternalLink },
+  { title: 'Sheets', url: 'https://docs.google.com/spreadsheets/d/1-CinFq0rTXDGlGgFFQZ22Vfr2qraQeoSbhyET3p8oxA/edit?usp=sharing', icon: ExternalLink },
 ];
 
 export function AppSidebar() {
