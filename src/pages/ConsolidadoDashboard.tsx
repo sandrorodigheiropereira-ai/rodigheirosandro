@@ -32,8 +32,13 @@ export default function ConsolidadoDashboard() {
   const currentIdx = meses.indexOf(currentMonth);
   const prevMonth = currentIdx > 0 ? meses[currentIdx - 1] : undefined;
 
-  const currentData = filtered.filter(r => periodo.length === 0 || r.data === currentMonth);
-  const prevData = prevMonth ? allRecords.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade.length === 0 || unidade.includes(r.unidade))) : undefined;
+  // KPIs: se múltiplos meses selecionados, soma todos; se nenhum, usa último mês; se um, usa esse
+  const currentData = periodo.length > 1
+    ? filtered
+    : filtered.filter(r => r.data === currentMonth);
+  const prevData = prevMonth && periodo.length <= 1
+    ? allRecords.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade.length === 0 || unidade.includes(r.unidade)))
+    : undefined;
 
   const metrics = calcMetrics(currentData, prevData);
   const alerts = generateAlerts(filtered);
