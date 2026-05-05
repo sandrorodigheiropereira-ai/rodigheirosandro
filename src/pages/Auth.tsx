@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { FileSpreadsheet, Loader2 } from 'lucide-react';
+import maisSaborLogo from '@/assets/mais-sabor-logo.png';
 
 const schema = z.object({
   email: z.string().trim().email('Email inválido').max(255),
@@ -52,6 +53,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
+          <img src={maisSaborLogo} alt="Mais Sabor" className="mx-auto h-20 w-auto object-contain" />
           <div className="mx-auto w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border">
             {logoUrl ? (
               <img src={logoUrl} alt="Logo da empresa" className="w-full h-full object-contain" />
@@ -80,6 +82,9 @@ export default function Auth() {
             </Button>
             <p className="text-xs text-center text-muted-foreground">
               Acesso restrito. Solicite credenciais ao administrador.
+            </p>
+            <p className="text-xs text-center text-muted-foreground">
+              Criando e desenvolvido por Sandro Rodigheiro
             </p>
           </form>
         </CardContent>
