@@ -54,11 +54,11 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <img src={maisSaborLogo} alt="Mais Sabor" className="mx-auto h-20 w-auto object-contain" />
-          <div className="mx-auto w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border">
+          <div className="mx-auto w-24 h-24 flex items-center justify-center overflow-hidden border-0 border-none rounded-none shadow-none bg-transparent">
             {logoUrl ? (
               <img src={logoUrl} alt="Logo da empresa" className="w-full h-full object-contain" />
             ) : (
-              <FileSpreadsheet className="w-10 h-10 text-muted-foreground" />
+              <FileSpreadsheet className="lucide lucide-file-spreadsheet w-10 h-10 text-transparent border-0 border-none" />
             )}
           </div>
           <div>
