@@ -119,38 +119,10 @@ export default function UnidadeDashboard() {
                     outerRadius={90}
                     innerRadius={50}
                     paddingAngle={2}
-                    label={({ value, x, y, cx }) => (
-                      <g>
-                        <rect
-                          x={x > cx ? x - 2 : x - 62}
-                          y={y - 10}
-                          width={64}
-                          height={20}
-                          rx={4}
-                          fill="hsl(0 0% 96%)"
-                          stroke="hsl(0 0% 80%)"
-                        />
-                        <text
-                          x={x > cx ? x + 30 : x - 30}
-                          y={y + 4}
-                          fill="#000"
-                          fontSize={11}
-                          fontWeight={600}
-                          textAnchor="middle"
-                        >
-                          {formatCurrency(value as number)}
-                        </text>
-                      </g>
-                    )}
-                    labelLine={{ stroke: 'hsl(0 0% 60%)' }}
+                    isAnimationActive={false}
                   >
-                    {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+                    {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} stroke="none" />)}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
-                    formatter={(v: number) => formatCurrency(v)}
-                  />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-3">
