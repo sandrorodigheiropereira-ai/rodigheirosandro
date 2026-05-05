@@ -328,15 +328,10 @@ export default function AdministrativoDashboard() {
                     outerRadius={90}
                     innerRadius={50}
                     paddingAngle={2}
-                    label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
+                    isAnimationActive={false}
                   >
-                    {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+                    {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} stroke="none" />)}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
-                    formatter={(v: number) => formatCurrency(v)}
-                  />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-3">
