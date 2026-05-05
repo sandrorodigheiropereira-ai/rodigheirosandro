@@ -108,48 +108,44 @@ export default function RegionalDashboard() {
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Distribuição de Custos</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie
-                data={costData}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={90}
-                paddingAngle={3}
-                dataKey="value"
-                label={({ value, x, y, cx }) => (
-                  <g>
-                    <rect
-                      x={x > cx ? x - 2 : x - 62}
-                      y={y - 10}
-                      width={64}
-                      height={20}
-                      rx={4}
-                      fill="hsl(0 0% 96%)"
-                      stroke="hsl(0 0% 80%)"
-                    />
-                    <text
-                      x={x > cx ? x + 30 : x - 30}
-                      y={y + 4}
-                      fill="#000"
-                      fontSize={11}
-                      fontWeight={600}
-                      textAnchor="middle"
-                    >
-                      {formatCurrency(value as number)}
-                    </text>
-                  </g>
-                )}
-                labelLine={{ stroke: 'hsl(0 0% 60%)' }}
-              >
-                {costData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
-              </Pie>
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
-                formatter={(v: number) => formatCurrency(v)} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={costData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={90}
+                  paddingAngle={3}
+                  dataKey="value"
+                  isAnimationActive={false}
+                >
+                  {costData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} stroke="none" />)}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-col gap-2">
+              {(() => {
+                const total = costData.reduce((s, c) => s + c.value, 0);
+                return costData.map((c, i) => {
+                  const pct = total > 0 ? (c.value / total) * 100 : 0;
+                  return (
+                    <div key={c.name} className="rounded-lg border border-border/50 bg-secondary/40 p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i] }} />
+                        <span className="text-xs font-medium text-muted-foreground">{c.name}</span>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-sm font-display font-bold tracking-tight">{formatCurrency(c.value)}</span>
+                        <span className="text-[11px] font-medium text-muted-foreground">{pct.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
         </motion.div>
       </div>
 
