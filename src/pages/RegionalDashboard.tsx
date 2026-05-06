@@ -106,18 +106,18 @@ export default function RegionalDashboard() {
           </ResponsiveContainer>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Distribuição de Custos</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-            <ResponsiveContainer width="100%" height={220}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-4">
+          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Distribuição de Custos</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
                   data={costData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  paddingAngle={3}
+                  innerRadius={42}
+                  outerRadius={75}
+                  paddingAngle={2}
                   dataKey="value"
                   isAnimationActive={false}
                 >
@@ -125,21 +125,21 @@ export default function RegionalDashboard() {
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               {(() => {
                 const total = costData.reduce((s, c) => s + c.value, 0);
                 return costData.map((c, i) => {
                   const pct = total > 0 ? (c.value / total) * 100 : 0;
                   return (
-                    <div key={c.name} className="rounded-lg border border-border/50 bg-secondary/40 p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i] }} />
-                        <span className="text-xs font-medium text-muted-foreground">{c.name}</span>
+                    <div key={c.name} className="rounded-lg border border-border bg-secondary/40 p-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: PIE_COLORS[i] }} />
+                          <span className="text-[10px] font-medium">{c.name}</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{pct.toFixed(1)}%</span>
                       </div>
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm font-display font-bold tracking-tight">{formatCurrency(c.value)}</span>
-                        <span className="text-[11px] font-medium text-muted-foreground">{pct.toFixed(1)}%</span>
-                      </div>
+                      <p className="text-[10px] font-display font-bold truncate">{formatCurrency(c.value)}</p>
                     </div>
                   );
                 });
