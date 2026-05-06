@@ -28,16 +28,27 @@ export default function ConsolidadoDashboard() {
   }, [periodo, regional, unidade, allRecords]);
 
   const meses = useMemo(() => [...new Set(allRecords.map(r => r.data))].sort(), [allRecords]);
-  const currentMonth = periodo.length === 1 ? periodo[0] : meses[meses.length - 1];
-  const currentIdx = meses.indexOf(currentMonth);
-  const prevMonth = currentIdx > 0 ? meses[currentIdx - 1] : undefined;
 
-  // KPIs: se nenhum ou múltiplos meses selecionados, soma todos os filtrados; se um, usa esse
-  const currentData = periodo.length === 1
-    ? filtered.filter(r => r.data === currentMonth)
-    : filtered;
-  const prevData = prevMonth && periodo.length === 1
-    ? allRecords.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade.length === 0 || unidade.includes(r.unidade)))
+  // Janela atual: meses selecionados (ou todos, se nenhum). Janela anterior: N meses imediatamente antes da janela atual.
+  const selectedMonths = useMemo(
+    () => (periodo.length > 0 ? [...periodo].sort() : meses),
+    [periodo, meses]
+  );
+  const prevMonths = useMemo(() => {
+    if (selectedMonths.length === 0) return [];
+    const earliestIdx = meses.indexOf(selectedMonths[0]);
+    if (earliestIdx <= 0) return [];
+    const N = selectedMonths.length;
+    return meses.slice(Math.max(0, earliestIdx - N), earliestIdx);
+  }, [selectedMonths, meses]);
+
+  const currentData = filtered;
+  const prevData = prevMonths.length > 0
+    ? allRecords.filter(r =>
+        prevMonths.includes(r.data) &&
+        (regional === 'all' || r.regional === regional) &&
+        (unidade.length === 0 || unidade.includes(r.unidade))
+      )
     : undefined;
 
   const metrics = calcMetrics(currentData, prevData);
