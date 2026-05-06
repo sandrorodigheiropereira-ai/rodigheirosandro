@@ -17,13 +17,22 @@ export default function RegionalDashboard() {
   const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+
+  const availableMonths = useMemo(
+    () => [...new Set(allRecords.map(r => r.data))].filter(Boolean).sort(),
+    [allRecords]
+  );
 
   // Set default regional when data loads
   useMemo(() => {
     if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
 
-  const filtered = useMemo(() => allRecords.filter(r => r.regional === regional), [regional, allRecords]);
+  const filtered = useMemo(
+    () => allRecords.filter(r => r.regional === regional && (selectedMonth === 'all' || r.data === selectedMonth)),
+    [regional, selectedMonth, allRecords]
+  );
   const metrics = calcMetrics(filtered);
   const ranking = rankUnidades(filtered);
 
