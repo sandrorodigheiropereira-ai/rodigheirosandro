@@ -37,16 +37,21 @@ export default function UnidadeDashboard() {
     }
   }, [unidades]);
 
-  const filtered = useMemo(() => allRecords.filter(r => r.unidade === unidade), [unidade, allRecords]);
+  const unidadeRecords = useMemo(() => allRecords.filter(r => r.unidade === unidade), [unidade, allRecords]);
+  const filtered = useMemo(
+    () => unidadeRecords.filter(r => selectedMonth === 'all' || r.data === selectedMonth),
+    [unidadeRecords, selectedMonth]
+  );
   const metrics = calcMetrics(filtered);
 
+  // Evolução mensal usa todos os meses (não filtra pelo seletor de mês)
   const monthlyData = useMemo(() => {
-    const byMonth = groupBy(filtered, 'data');
+    const byMonth = groupBy(unidadeRecords, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
       const m = calcMetrics(recs);
       return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal };
     });
-  }, [filtered]);
+  }, [unidadeRecords]);
 
   if (isLoading) {
     return (
