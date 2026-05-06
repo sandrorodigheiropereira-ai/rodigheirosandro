@@ -80,7 +80,14 @@ export default function UnidadeDashboard() {
           <h1 className="text-2xl font-display font-bold">Dashboard por Unidade</h1>
           <p className="text-sm text-muted-foreground">Análise detalhada da unidade</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[150px] bg-secondary border-border"><SelectValue placeholder="Mês" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os meses</SelectItem>
+              {availableMonths.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={regional} onValueChange={(v) => { setRegional(v); const u = getUnidadesFromData(allRecords, v); setUnidade(u[0] || ''); }}>
             <SelectTrigger className="w-[160px] bg-secondary border-border"><SelectValue /></SelectTrigger>
             <SelectContent>
