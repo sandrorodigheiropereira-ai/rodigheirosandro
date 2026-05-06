@@ -15,6 +15,12 @@ export default function UnidadeDashboard() {
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
   const [unidade, setUnidade] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+
+  const availableMonths = useMemo(
+    () => [...new Set(allRecords.map(r => r.data))].filter(Boolean).sort(),
+    [allRecords]
+  );
 
   const unidades = useMemo(() => getUnidadesFromData(allRecords, regional), [allRecords, regional]);
 
