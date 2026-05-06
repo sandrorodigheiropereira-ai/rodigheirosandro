@@ -28,16 +28,27 @@ export default function ConsolidadoDashboard() {
   }, [periodo, regional, unidade, allRecords]);
 
   const meses = useMemo(() => [...new Set(allRecords.map(r => r.data))].sort(), [allRecords]);
-  const currentMonth = periodo.length === 1 ? periodo[0] : meses[meses.length - 1];
-  const currentIdx = meses.indexOf(currentMonth);
-  const prevMonth = currentIdx > 0 ? meses[currentIdx - 1] : undefined;
 
-  // KPIs: se nenhum ou múltiplos meses selecionados, soma todos os filtrados; se um, usa esse
-  const currentData = periodo.length === 1
-    ? filtered.filter(r => r.data === currentMonth)
-    : filtered;
-  const prevData = prevMonth && periodo.length === 1
-    ? allRecords.filter(r => r.data === prevMonth && (regional === 'all' || r.regional === regional) && (unidade.length === 0 || unidade.includes(r.unidade)))
+  // Janela atual: meses selecionados (ou todos, se nenhum). Janela anterior: N meses imediatamente antes da janela atual.
+  const selectedMonths = useMemo(
+    () => (periodo.length > 0 ? [...periodo].sort() : meses),
+    [periodo, meses]
+  );
+  const prevMonths = useMemo(() => {
+    if (selectedMonths.length === 0) return [];
+    const earliestIdx = meses.indexOf(selectedMonths[0]);
+    if (earliestIdx <= 0) return [];
+    const N = selectedMonths.length;
+    return meses.slice(Math.max(0, earliestIdx - N), earliestIdx);
+  }, [selectedMonths, meses]);
+
+  const currentData = filtered;
+  const prevData = prevMonths.length > 0
+    ? allRecords.filter(r =>
+        prevMonths.includes(r.data) &&
+        (regional === 'all' || r.regional === regional) &&
+        (unidade.length === 0 || unidade.includes(r.unidade))
+      )
     : undefined;
 
   const metrics = calcMetrics(currentData, prevData);
@@ -96,12 +107,22 @@ export default function ConsolidadoDashboard() {
           records={allRecords} multiSelectUnidade multiSelectPeriodo />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" icon={<DollarSign className="w-5 h-5" />} delay={0} />
-        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
-        <KpiCard title="CMV" value={metrics.cmvPercent} format="percent" icon={<BarChart3 className="w-5 h-5" />} delay={0.3} />
-      </div>
+      {(() => {
+        const prevMetrics = prevData ? calcMetrics(prevData) : undefined;
+        const pct = (cur: number, prev?: number) =>
+          prev !== undefined && prev > 0 ? ((cur - prev) / prev) * 100 : undefined;
+        const periodLabel = prevMonths.length > 0
+          ? `vs ${prevMonths.length === 1 ? 'mês anterior' : `${prevMonths.length} meses anteriores`}`
+          : undefined;
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} delay={0} />
+            <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
+            <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
+            <KpiCard title="CMV" value={metrics.cmvPercent} format="percent" change={prevMetrics ? metrics.cmvPercent - prevMetrics.cmvPercent : undefined} subtitle={periodLabel} icon={<BarChart3 className="w-5 h-5" />} delay={0.3} />
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="lg:col-span-2 glass-card rounded-xl p-5">
