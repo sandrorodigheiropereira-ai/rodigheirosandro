@@ -10,11 +10,15 @@ import { filterOutAdm } from '@/lib/constants';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart, LabelList } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type CompareMode = 'previous-month' | 'previous-window';
 
 export default function ConsolidadoDashboard() {
   const [periodo, setPeriodo] = useState<string[]>([]);
   const [regional, setRegional] = useState('all');
   const [unidade, setUnidade] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState<CompareMode>('previous-window');
 
   const { data: sheetData, isLoading, error } = useSheetData();
   const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
@@ -38,9 +42,9 @@ export default function ConsolidadoDashboard() {
     if (selectedMonths.length === 0) return [];
     const earliestIdx = meses.indexOf(selectedMonths[0]);
     if (earliestIdx <= 0) return [];
-    const N = selectedMonths.length;
+    const N = compareMode === 'previous-month' ? 1 : selectedMonths.length;
     return meses.slice(Math.max(0, earliestIdx - N), earliestIdx);
-  }, [selectedMonths, meses]);
+  }, [selectedMonths, meses, compareMode]);
 
   const currentData = filtered;
   const prevData = prevMonths.length > 0
@@ -106,6 +110,22 @@ export default function ConsolidadoDashboard() {
           onPeriodoChange={(v) => setPeriodo(Array.isArray(v) ? v : v === 'all' ? [] : [v])} onRegionalChange={(v) => { setRegional(v); setUnidade([]); }} onUnidadeChange={(v) => setUnidade(Array.isArray(v) ? v : v === 'all' ? [] : [v])}
           records={allRecords} multiSelectUnidade multiSelectPeriodo />
       </div>
+
+      {selectedMonths.length > 1 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted-foreground">Comparar com:</span>
+          <ToggleGroup
+            type="single"
+            value={compareMode}
+            onValueChange={(v) => v && setCompareMode(v as CompareMode)}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="previous-month" className="text-xs">Mês anterior</ToggleGroupItem>
+            <ToggleGroupItem value="previous-window" className="text-xs">Janela anterior ({selectedMonths.length} meses)</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
 
       {(() => {
         const prevMetrics = prevData ? calcMetrics(prevData) : undefined;
