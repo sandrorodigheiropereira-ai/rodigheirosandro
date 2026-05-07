@@ -4,10 +4,14 @@ import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MultiSelectUnidade } from '@/components/MultiSelectUnidade';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+
+type CompareMode = 'previous-month' | 'previous-window';
 
 export default function UnidadeDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
@@ -15,20 +19,18 @@ export default function UnidadeDashboard() {
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
   const [unidade, setUnidade] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [periodo, setPeriodo] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState<CompareMode>('previous-window');
 
-  const availableMonths = useMemo(
+  const meses = useMemo(
     () => [...new Set(allRecords.map(r => r.data))].filter(Boolean).sort(),
     [allRecords]
   );
 
   const unidades = useMemo(() => getUnidadesFromData(allRecords, regional), [allRecords, regional]);
 
-  // Set defaults when data loads
   useMemo(() => {
-    if (regionais.length > 0 && !regional) {
-      setRegional(regionais[0]);
-    }
+    if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
 
   useMemo(() => {
@@ -39,10 +41,29 @@ export default function UnidadeDashboard() {
 
   const unidadeRecords = useMemo(() => allRecords.filter(r => r.unidade === unidade), [unidade, allRecords]);
   const filtered = useMemo(
-    () => unidadeRecords.filter(r => selectedMonth === 'all' || r.data === selectedMonth),
-    [unidadeRecords, selectedMonth]
+    () => unidadeRecords.filter(r => periodo.length === 0 || periodo.includes(r.data)),
+    [unidadeRecords, periodo]
   );
-  const metrics = calcMetrics(filtered);
+
+  const selectedMonths = useMemo(() => (periodo.length > 0 ? [...periodo].sort() : meses), [periodo, meses]);
+  const prevMonths = useMemo(() => {
+    if (selectedMonths.length === 0) return [];
+    const earliestIdx = meses.indexOf(selectedMonths[0]);
+    if (earliestIdx <= 0) return [];
+    const N = compareMode === 'previous-month' ? 1 : selectedMonths.length;
+    return meses.slice(Math.max(0, earliestIdx - N), earliestIdx);
+  }, [selectedMonths, meses, compareMode]);
+
+  const prevData = prevMonths.length > 0
+    ? unidadeRecords.filter(r => prevMonths.includes(r.data))
+    : undefined;
+
+  const metrics = calcMetrics(filtered, prevData);
+  const prevMetrics = prevData ? calcMetrics(prevData) : undefined;
+  const pct = (cur: number, prev?: number) => prev !== undefined && prev > 0 ? ((cur - prev) / prev) * 100 : undefined;
+  const periodLabel = prevMonths.length > 0
+    ? `vs ${prevMonths.length === 1 ? 'mês anterior' : `${prevMonths.length} meses anteriores`}`
+    : undefined;
 
   // Evolução mensal usa todos os meses (não filtra pelo seletor de mês)
   const monthlyData = useMemo(() => {
