@@ -111,6 +111,22 @@ export default function ConsolidadoDashboard() {
           records={allRecords} multiSelectUnidade multiSelectPeriodo />
       </div>
 
+      {selectedMonths.length > 1 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted-foreground">Comparar com:</span>
+          <ToggleGroup
+            type="single"
+            value={compareMode}
+            onValueChange={(v) => v && setCompareMode(v as CompareMode)}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="previous-month" className="text-xs">Mês anterior</ToggleGroupItem>
+            <ToggleGroupItem value="previous-window" className="text-xs">Janela anterior ({selectedMonths.length} meses)</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
+
       {(() => {
         const prevMetrics = prevData ? calcMetrics(prevData) : undefined;
         const pct = (cur: number, prev?: number) =>
