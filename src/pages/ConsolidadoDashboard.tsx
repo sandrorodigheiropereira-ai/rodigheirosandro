@@ -42,9 +42,9 @@ export default function ConsolidadoDashboard() {
     if (selectedMonths.length === 0) return [];
     const earliestIdx = meses.indexOf(selectedMonths[0]);
     if (earliestIdx <= 0) return [];
-    const N = selectedMonths.length;
+    const N = compareMode === 'previous-month' ? 1 : selectedMonths.length;
     return meses.slice(Math.max(0, earliestIdx - N), earliestIdx);
-  }, [selectedMonths, meses]);
+  }, [selectedMonths, meses, compareMode]);
 
   const currentData = filtered;
   const prevData = prevMonths.length > 0
