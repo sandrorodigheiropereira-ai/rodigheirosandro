@@ -4,10 +4,14 @@ import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MultiSelectUnidade } from '@/components/MultiSelectUnidade';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+
+type CompareMode = 'previous-month' | 'previous-window';
 
 export default function UnidadeDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
@@ -15,20 +19,18 @@ export default function UnidadeDashboard() {
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
   const [unidade, setUnidade] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [periodo, setPeriodo] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState<CompareMode>('previous-window');
 
-  const availableMonths = useMemo(
+  const meses = useMemo(
     () => [...new Set(allRecords.map(r => r.data))].filter(Boolean).sort(),
     [allRecords]
   );
 
   const unidades = useMemo(() => getUnidadesFromData(allRecords, regional), [allRecords, regional]);
 
-  // Set defaults when data loads
   useMemo(() => {
-    if (regionais.length > 0 && !regional) {
-      setRegional(regionais[0]);
-    }
+    if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
 
   useMemo(() => {
@@ -39,10 +41,29 @@ export default function UnidadeDashboard() {
 
   const unidadeRecords = useMemo(() => allRecords.filter(r => r.unidade === unidade), [unidade, allRecords]);
   const filtered = useMemo(
-    () => unidadeRecords.filter(r => selectedMonth === 'all' || r.data === selectedMonth),
-    [unidadeRecords, selectedMonth]
+    () => unidadeRecords.filter(r => periodo.length === 0 || periodo.includes(r.data)),
+    [unidadeRecords, periodo]
   );
-  const metrics = calcMetrics(filtered);
+
+  const selectedMonths = useMemo(() => (periodo.length > 0 ? [...periodo].sort() : meses), [periodo, meses]);
+  const prevMonths = useMemo(() => {
+    if (selectedMonths.length === 0) return [];
+    const earliestIdx = meses.indexOf(selectedMonths[0]);
+    if (earliestIdx <= 0) return [];
+    const N = compareMode === 'previous-month' ? 1 : selectedMonths.length;
+    return meses.slice(Math.max(0, earliestIdx - N), earliestIdx);
+  }, [selectedMonths, meses, compareMode]);
+
+  const prevData = prevMonths.length > 0
+    ? unidadeRecords.filter(r => prevMonths.includes(r.data))
+    : undefined;
+
+  const metrics = calcMetrics(filtered, prevData);
+  const prevMetrics = prevData ? calcMetrics(prevData) : undefined;
+  const pct = (cur: number, prev?: number) => prev !== undefined && prev > 0 ? ((cur - prev) / prev) * 100 : undefined;
+  const periodLabel = prevMonths.length > 0
+    ? `vs ${prevMonths.length === 1 ? 'mês anterior' : `${prevMonths.length} meses anteriores`}`
+    : undefined;
 
   // Evolução mensal usa todos os meses (não filtra pelo seletor de mês)
   const monthlyData = useMemo(() => {
@@ -81,13 +102,14 @@ export default function UnidadeDashboard() {
           <p className="text-sm text-muted-foreground">Análise detalhada da unidade</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[150px] bg-secondary border-border"><SelectValue placeholder="Mês" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os meses</SelectItem>
-              {availableMonths.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <MultiSelectUnidade
+            options={meses}
+            selected={periodo}
+            onChange={setPeriodo}
+            allLabel="Todos os meses"
+            pluralLabel="meses"
+            width="w-[170px]"
+          />
           <Select value={regional} onValueChange={(v) => { setRegional(v); const u = getUnidadesFromData(allRecords, v); setUnidade(u[0] || ''); }}>
             <SelectTrigger className="w-[160px] bg-secondary border-border"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -103,12 +125,28 @@ export default function UnidadeDashboard() {
         </div>
       </div>
 
+      {selectedMonths.length > 1 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted-foreground">Comparar com:</span>
+          <ToggleGroup
+            type="single"
+            value={compareMode}
+            onValueChange={(v) => v && setCompareMode(v as CompareMode)}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="previous-month" className="text-xs">Mês anterior</ToggleGroupItem>
+            <ToggleGroupItem value="previous-window" className="text-xs">Janela anterior ({selectedMonths.length} meses)</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard title="Receita" value={metrics.receitaBruta} format="currency" icon={<DollarSign className="w-5 h-5" />} />
-        <KpiCard title="CMV" value={metrics.cmvPercent} format="percent" icon={<ShoppingCart className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Mão de Obra" value={metrics.maoDeObraPercent} format="percent" icon={<Users className="w-5 h-5" />} delay={0.2} />
-        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.3} />
-        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.4} />
+        <KpiCard title="Receita" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} />
+        <KpiCard title="CMV" value={metrics.cmvPercent} format="percent" change={prevMetrics ? metrics.cmvPercent - prevMetrics.cmvPercent : undefined} subtitle={periodLabel} icon={<ShoppingCart className="w-5 h-5" />} delay={0.1} />
+        <KpiCard title="Mão de Obra" value={metrics.maoDeObraPercent} format="percent" change={prevMetrics ? metrics.maoDeObraPercent - prevMetrics.maoDeObraPercent : undefined} subtitle={periodLabel} icon={<Users className="w-5 h-5" />} delay={0.2} />
+        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.3} />
+        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.4} />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-4">
