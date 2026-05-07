@@ -5,6 +5,8 @@ import { calcMetrics, groupBy, formatCurrency, rankUnidades } from '@/lib/calcul
 import { filterOutAdm } from '@/lib/constants';
 import { RankingPanel } from '@/components/RankingPanel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MultiSelectUnidade } from '@/components/MultiSelectUnidade';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSheetData, getRegionaisFromData } from '@/hooks/useSheetData';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
@@ -12,28 +14,50 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const PIE_COLORS = ['hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
 
+type CompareMode = 'previous-month' | 'previous-window';
+
 export default function RegionalDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
   const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [periodo, setPeriodo] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState<CompareMode>('previous-window');
 
-  const availableMonths = useMemo(
+  const meses = useMemo(
     () => [...new Set(allRecords.map(r => r.data))].filter(Boolean).sort(),
     [allRecords]
   );
 
-  // Set default regional when data loads
   useMemo(() => {
     if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
 
   const filtered = useMemo(
-    () => allRecords.filter(r => r.regional === regional && (selectedMonth === 'all' || r.data === selectedMonth)),
-    [regional, selectedMonth, allRecords]
+    () => allRecords.filter(r => r.regional === regional && (periodo.length === 0 || periodo.includes(r.data))),
+    [regional, periodo, allRecords]
   );
-  const metrics = calcMetrics(filtered);
+
+  const selectedMonths = useMemo(() => (periodo.length > 0 ? [...periodo].sort() : meses), [periodo, meses]);
+  const prevMonths = useMemo(() => {
+    if (selectedMonths.length === 0) return [];
+    const earliestIdx = meses.indexOf(selectedMonths[0]);
+    if (earliestIdx <= 0) return [];
+    const N = compareMode === 'previous-month' ? 1 : selectedMonths.length;
+    return meses.slice(Math.max(0, earliestIdx - N), earliestIdx);
+  }, [selectedMonths, meses, compareMode]);
+
+  const prevData = prevMonths.length > 0
+    ? allRecords.filter(r => r.regional === regional && prevMonths.includes(r.data))
+    : undefined;
+
+  const metrics = calcMetrics(filtered, prevData);
+  const prevMetrics = prevData ? calcMetrics(prevData) : undefined;
+  const pct = (cur: number, prev?: number) => prev !== undefined && prev > 0 ? ((cur - prev) / prev) * 100 : undefined;
+  const periodLabel = prevMonths.length > 0
+    ? `vs ${prevMonths.length === 1 ? 'mês anterior' : `${prevMonths.length} meses anteriores`}`
+    : undefined;
+
   const ranking = rankUnidades(filtered);
 
   const unidadeData = useMemo(() => {
@@ -84,15 +108,14 @@ export default function RegionalDashboard() {
           <p className="text-sm text-muted-foreground">Análise por regional</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[160px] bg-secondary border-border">
-              <SelectValue placeholder="Mês" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os meses</SelectItem>
-              {availableMonths.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <MultiSelectUnidade
+            options={meses}
+            selected={periodo}
+            onChange={setPeriodo}
+            allLabel="Todos os meses"
+            pluralLabel="meses"
+            width="w-[180px]"
+          />
           <Select value={regional} onValueChange={setRegional}>
             <SelectTrigger className="w-[180px] bg-secondary border-border">
               <SelectValue />
@@ -104,10 +127,26 @@ export default function RegionalDashboard() {
         </div>
       </div>
 
+      {selectedMonths.length > 1 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted-foreground">Comparar com:</span>
+          <ToggleGroup
+            type="single"
+            value={compareMode}
+            onValueChange={(v) => v && setCompareMode(v as CompareMode)}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="previous-month" className="text-xs">Mês anterior</ToggleGroupItem>
+            <ToggleGroupItem value="previous-window" className="text-xs">Janela anterior ({selectedMonths.length} meses)</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" icon={<DollarSign className="w-5 h-5" />} />
-        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
+        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} />
+        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
+        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -149,7 +188,7 @@ export default function RegionalDashboard() {
               {(() => {
                 const total = costData.reduce((s, c) => s + c.value, 0);
                 return costData.map((c, i) => {
-                  const pct = total > 0 ? (c.value / total) * 100 : 0;
+                  const pctVal = total > 0 ? (c.value / total) * 100 : 0;
                   return (
                     <div key={c.name} className="rounded-lg border border-border bg-secondary/40 p-2">
                       <div className="flex items-center justify-between mb-1">
@@ -157,7 +196,7 @@ export default function RegionalDashboard() {
                           <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: PIE_COLORS[i] }} />
                           <span className="text-[10px] font-medium">{c.name}</span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground">{pct.toFixed(1)}%</span>
+                        <span className="text-[10px] text-muted-foreground">{pctVal.toFixed(1)}%</span>
                       </div>
                       <p className="text-[10px] font-display font-bold truncate">{formatCurrency(c.value)}</p>
                     </div>
