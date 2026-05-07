@@ -10,11 +10,15 @@ import { filterOutAdm } from '@/lib/constants';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart, LabelList } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+type CompareMode = 'previous-month' | 'previous-window';
 
 export default function ConsolidadoDashboard() {
   const [periodo, setPeriodo] = useState<string[]>([]);
   const [regional, setRegional] = useState('all');
   const [unidade, setUnidade] = useState<string[]>([]);
+  const [compareMode, setCompareMode] = useState<CompareMode>('previous-window');
 
   const { data: sheetData, isLoading, error } = useSheetData();
   const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
