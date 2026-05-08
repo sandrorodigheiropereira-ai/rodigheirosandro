@@ -233,7 +233,7 @@ export default function RegionalDashboard() {
             <ToggleGroupItem value="margem" className="text-xs">Margem</ToggleGroupItem>
           </ToggleGroup>
         </div>
-        <RankingPanel data={ranking} previousData={prevRanking} format={rankFormat} title={rankTitle} />
+        <RankingPanel data={ranking} previousData={prevRanking} format={rankFormat} title="Ranking de Unidades" metricLabel={metricLabel} subtitle={rankingSubtitle} />
       </div>
     </div>
   );
