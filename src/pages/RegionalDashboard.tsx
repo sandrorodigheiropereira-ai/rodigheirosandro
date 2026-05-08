@@ -62,7 +62,15 @@ export default function RegionalDashboard() {
   const ranking = rankUnidades(filtered, rankMetric);
   const prevRanking = prevData ? rankUnidades(prevData, rankMetric) : undefined;
   const rankFormat: 'currency' | 'percent' = rankMetric === 'margem' ? 'percent' : 'currency';
-  const rankTitle = rankMetric === 'receitaBruta' ? 'Ranking de Unidades · Receita' : rankMetric === 'ebitda' ? 'Ranking de Unidades · EBITDA' : 'Ranking de Unidades · Margem';
+  const metricLabel = rankMetric === 'receitaBruta' ? 'Receita' : rankMetric === 'ebitda' ? 'EBITDA' : 'Margem';
+  const periodCurrentLabel = selectedMonths.length === 0
+    ? 'Todos os meses'
+    : selectedMonths.length === 1
+      ? selectedMonths[0]
+      : `${selectedMonths[0]} – ${selectedMonths[selectedMonths.length - 1]} (${selectedMonths.length} meses)`;
+  const rankingSubtitle = periodLabel
+    ? `${periodCurrentLabel} ${periodLabel}`
+    : periodCurrentLabel;
 
   const unidadeData = useMemo(() => {
     const byUnidade = groupBy(filtered, 'unidade');
