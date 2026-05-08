@@ -100,7 +100,7 @@ export function RankingPanel({ data, previousData, format = 'currency', title = 
       <div className="space-y-1">
         <div className="flex items-center gap-2 mb-2">
           <ArrowDown className="w-4 h-4 text-danger" />
-          <span className="text-xs font-medium text-danger">Bottom 3</span>
+          <span className="text-xs font-medium text-danger">Bottom 3{metricLabel ? ` · ${metricLabel}` : ''}</span>
         </div>
         {bottom3.map((item, i) => (
           <motion.div
