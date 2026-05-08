@@ -59,6 +59,8 @@ export default function ConsolidadoDashboard() {
   const alerts = generateAlerts(filtered);
   const ranking = rankUnidades(filtered);
   const rankingMargem = rankUnidades(filtered, 'margem');
+  const prevRanking = prevData ? rankUnidades(prevData) : undefined;
+  const prevRankingMargem = prevData ? rankUnidades(prevData, 'margem') : undefined;
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
@@ -195,8 +197,8 @@ export default function ConsolidadoDashboard() {
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RankingPanel data={ranking} format="currency" title="Ranking Geral por Receita" />
-        <RankingPanel data={rankingMargem} format="percent" title="Ranking Geral por Margem" />
+        <RankingPanel data={ranking} previousData={prevRanking} format="currency" title="Ranking Geral por Receita" />
+        <RankingPanel data={rankingMargem} previousData={prevRankingMargem} format="percent" title="Ranking Geral por Margem" />
       </div>
     </div>
   );

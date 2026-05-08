@@ -59,6 +59,7 @@ export default function RegionalDashboard() {
     : undefined;
 
   const ranking = rankUnidades(filtered);
+  const prevRanking = prevData ? rankUnidades(prevData) : undefined;
 
   const unidadeData = useMemo(() => {
     const byUnidade = groupBy(filtered, 'unidade');
@@ -206,7 +207,7 @@ export default function RegionalDashboard() {
         </div>
       </motion.div>
 
-      <RankingPanel data={ranking} title="Ranking de Unidades" />
+      <RankingPanel data={ranking} previousData={prevRanking} title="Ranking de Unidades" />
     </div>
   );
 }
