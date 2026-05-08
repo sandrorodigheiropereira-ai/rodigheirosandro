@@ -60,12 +60,19 @@ export function RankingPanel({ data, previousData, format = 'currency', title = 
 
   return (
     <div className="glass-card rounded-xl p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{title}</h3>
-      
+      <div className="space-y-1">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{title}</h3>
+        {(metricLabel || subtitle) && (
+          <p className="text-[11px] text-muted-foreground">
+            {metricLabel}{metricLabel && subtitle ? ' · ' : ''}{subtitle}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-1">
         <div className="flex items-center gap-2 mb-2">
           <Trophy className="w-4 h-4 text-success" />
-          <span className="text-xs font-medium text-success">Top 3</span>
+          <span className="text-xs font-medium text-success">Top 3{metricLabel ? ` · ${metricLabel}` : ''}</span>
         </div>
         {top3.map((item, i) => (
           <motion.div
