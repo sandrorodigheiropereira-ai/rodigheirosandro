@@ -207,7 +207,7 @@ export default function RegionalDashboard() {
         </div>
       </motion.div>
 
-      <RankingPanel data={ranking} title="Ranking de Unidades" />
+      <RankingPanel data={ranking} previousData={prevRanking} title="Ranking de Unidades" />
     </div>
   );
 }
