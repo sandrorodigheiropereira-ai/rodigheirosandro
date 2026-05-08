@@ -210,7 +210,23 @@ export default function RegionalDashboard() {
         </div>
       </motion.div>
 
-      <RankingPanel data={ranking} previousData={prevRanking} title="Ranking de Unidades" />
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted-foreground">Métrica do ranking:</span>
+          <ToggleGroup
+            type="single"
+            value={rankMetric}
+            onValueChange={(v) => v && setRankMetric(v as 'receitaBruta' | 'ebitda' | 'margem')}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="receitaBruta" className="text-xs">Receita</ToggleGroupItem>
+            <ToggleGroupItem value="ebitda" className="text-xs">EBITDA</ToggleGroupItem>
+            <ToggleGroupItem value="margem" className="text-xs">Margem</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <RankingPanel data={ranking} previousData={prevRanking} format={rankFormat} title={rankTitle} />
+      </div>
     </div>
   );
 }
