@@ -59,6 +59,7 @@ export default function RegionalDashboard() {
     : undefined;
 
   const ranking = rankUnidades(filtered);
+  const prevRanking = prevData ? rankUnidades(prevData) : undefined;
 
   const unidadeData = useMemo(() => {
     const byUnidade = groupBy(filtered, 'unidade');
