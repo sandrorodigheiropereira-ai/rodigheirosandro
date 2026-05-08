@@ -59,6 +59,8 @@ export default function ConsolidadoDashboard() {
   const alerts = generateAlerts(filtered);
   const ranking = rankUnidades(filtered);
   const rankingMargem = rankUnidades(filtered, 'margem');
+  const prevRanking = prevData ? rankUnidades(prevData) : undefined;
+  const prevRankingMargem = prevData ? rankUnidades(prevData, 'margem') : undefined;
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
