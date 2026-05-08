@@ -149,64 +149,62 @@ export default function RegionalDashboard() {
         <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="lg:col-span-2 glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita por Unidade</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={unidadeData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
-              <XAxis dataKey="unidade" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} />
-              <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
-                formatter={(v: number) => formatCurrency(v)} />
-              <Bar dataKey="receita" name="Receita" fill="hsl(162 72% 46%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="despesa" name="Despesa Total" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita por Unidade</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={unidadeData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+            <XAxis dataKey="unidade" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} />
+            <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
+            <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
+              formatter={(v: number) => formatCurrency(v)} />
+            <Bar dataKey="receita" name="Receita" fill="hsl(162 72% 46%)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="despesa" name="Despesa Total" fill="hsl(210 90% 60%)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-4">
-          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Distribuição de Custos</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={costData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={42}
-                  outerRadius={75}
-                  paddingAngle={2}
-                  dataKey="value"
-                  isAnimationActive={false}
-                >
-                  {costData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} stroke="none" />)}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-2">
-              {(() => {
-                const total = costData.reduce((s, c) => s + c.value, 0);
-                return costData.map((c, i) => {
-                  const pctVal = total > 0 ? (c.value / total) * 100 : 0;
-                  return (
-                    <div key={c.name} className="rounded-lg border border-border bg-secondary/40 p-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: PIE_COLORS[i] }} />
-                          <span className="text-[10px] font-medium">{c.name}</span>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground">{pctVal.toFixed(1)}%</span>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-4">
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Distribuição de Custos</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center max-w-md mx-auto">
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={costData}
+                cx="50%"
+                cy="50%"
+                innerRadius={42}
+                outerRadius={75}
+                paddingAngle={2}
+                dataKey="value"
+                isAnimationActive={false}
+              >
+                {costData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} stroke="none" />)}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="space-y-2">
+            {(() => {
+              const total = costData.reduce((s, c) => s + c.value, 0);
+              return costData.map((c, i) => {
+                const pctVal = total > 0 ? (c.value / total) * 100 : 0;
+                return (
+                  <div key={c.name} className="rounded-lg border border-border bg-secondary/40 p-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: PIE_COLORS[i] }} />
+                        <span className="text-[10px] font-medium">{c.name}</span>
                       </div>
-                      <p className="text-[10px] font-display font-bold truncate">{formatCurrency(c.value)}</p>
+                      <span className="text-[10px] text-muted-foreground">{pctVal.toFixed(1)}%</span>
                     </div>
-                  );
-                });
-              })()}
-            </div>
+                    <p className="text-[10px] font-display font-bold truncate">{formatCurrency(c.value)}</p>
+                  </div>
+                );
+              });
+            })()}
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
 
       <RankingPanel data={ranking} title="Ranking de Unidades" />
     </div>
