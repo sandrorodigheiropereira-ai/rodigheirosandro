@@ -23,6 +23,7 @@ export default function RegionalDashboard() {
   const [regional, setRegional] = useState('');
   const [periodo, setPeriodo] = useState<string[]>([]);
   const [compareMode, setCompareMode] = useState<CompareMode>('previous-window');
+  const [rankMetric, setRankMetric] = useState<'receitaBruta' | 'ebitda' | 'margem'>('receitaBruta');
 
   const meses = useMemo(
     () => [...new Set(allRecords.map(r => r.data))].filter(Boolean).sort(),
