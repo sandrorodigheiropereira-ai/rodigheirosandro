@@ -13,9 +13,11 @@ interface RankingPanelProps {
   previousData?: RankedItem[];
   format?: 'currency' | 'percent';
   title?: string;
+  subtitle?: string;
+  metricLabel?: string;
 }
 
-export function RankingPanel({ data, previousData, format = 'currency', title = 'Ranking' }: RankingPanelProps) {
+export function RankingPanel({ data, previousData, format = 'currency', title = 'Ranking', subtitle, metricLabel }: RankingPanelProps) {
   const top3 = data.slice(0, 3);
   const bottom3 = data.slice(-3).reverse();
 
