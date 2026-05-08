@@ -78,15 +78,22 @@ export function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
 }
 
-export function rankUnidades(records: FinancialRecord[], metric: 'receitaBruta' | 'margem' = 'receitaBruta') {
+export type RankMetric = 'receitaBruta' | 'margem' | 'ebitda';
+
+export function rankUnidades(records: FinancialRecord[], metric: RankMetric = 'receitaBruta') {
   const byUnidade = groupBy(records, 'unidade');
-  const ranked = Object.entries(byUnidade).map(([unidade, recs]) => ({
-    unidade,
-    regional: recs[0].regional,
-    value: metric === 'receitaBruta'
-      ? recs.reduce((s, r) => s + r.receitaBruta, 0)
-      : recs.reduce((s, r) => s + r.margem, 0) / recs.length,
-  }));
+  const ranked = Object.entries(byUnidade).map(([unidade, recs]) => {
+    let value = 0;
+    if (metric === 'receitaBruta') {
+      value = recs.reduce((s, r) => s + r.receitaBruta, 0);
+    } else if (metric === 'margem') {
+      value = recs.reduce((s, r) => s + r.margem, 0) / recs.length;
+    } else {
+      // EBITDA proxy: Receita Bruta - Despesa Total
+      value = recs.reduce((s, r) => s + (r.receitaBruta - r.despesaTotal), 0);
+    }
+    return { unidade, regional: recs[0].regional, value };
+  });
   ranked.sort((a, b) => b.value - a.value);
   return ranked;
 }

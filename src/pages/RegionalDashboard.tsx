@@ -23,6 +23,7 @@ export default function RegionalDashboard() {
   const [regional, setRegional] = useState('');
   const [periodo, setPeriodo] = useState<string[]>([]);
   const [compareMode, setCompareMode] = useState<CompareMode>('previous-window');
+  const [rankMetric, setRankMetric] = useState<'receitaBruta' | 'ebitda' | 'margem'>('receitaBruta');
 
   const meses = useMemo(
     () => [...new Set(allRecords.map(r => r.data))].filter(Boolean).sort(),
@@ -58,8 +59,10 @@ export default function RegionalDashboard() {
     ? `vs ${prevMonths.length === 1 ? 'mês anterior' : `${prevMonths.length} meses anteriores`}`
     : undefined;
 
-  const ranking = rankUnidades(filtered);
-  const prevRanking = prevData ? rankUnidades(prevData) : undefined;
+  const ranking = rankUnidades(filtered, rankMetric);
+  const prevRanking = prevData ? rankUnidades(prevData, rankMetric) : undefined;
+  const rankFormat: 'currency' | 'percent' = rankMetric === 'margem' ? 'percent' : 'currency';
+  const rankTitle = rankMetric === 'receitaBruta' ? 'Ranking de Unidades · Receita' : rankMetric === 'ebitda' ? 'Ranking de Unidades · EBITDA' : 'Ranking de Unidades · Margem';
 
   const unidadeData = useMemo(() => {
     const byUnidade = groupBy(filtered, 'unidade');
@@ -207,7 +210,23 @@ export default function RegionalDashboard() {
         </div>
       </motion.div>
 
-      <RankingPanel data={ranking} previousData={prevRanking} title="Ranking de Unidades" />
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted-foreground">Métrica do ranking:</span>
+          <ToggleGroup
+            type="single"
+            value={rankMetric}
+            onValueChange={(v) => v && setRankMetric(v as 'receitaBruta' | 'ebitda' | 'margem')}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="receitaBruta" className="text-xs">Receita</ToggleGroupItem>
+            <ToggleGroupItem value="ebitda" className="text-xs">EBITDA</ToggleGroupItem>
+            <ToggleGroupItem value="margem" className="text-xs">Margem</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <RankingPanel data={ranking} previousData={prevRanking} format={rankFormat} title={rankTitle} />
+      </div>
     </div>
   );
 }
