@@ -10,6 +10,7 @@ import ConsolidadoDashboard from "./pages/ConsolidadoDashboard";
 import RegionalDashboard from "./pages/RegionalDashboard";
 import UnidadeDashboard from "./pages/UnidadeDashboard";
 import AdministrativoDashboard from "./pages/AdministrativoDashboard";
+import AlertasDashboard from "./pages/AlertasDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -34,6 +35,7 @@ const App = () => (
                       <Route path="/regional" element={<RegionalDashboard />} />
                       <Route path="/unidade" element={<UnidadeDashboard />} />
                       <Route path="/administrativo" element={<AdministrativoDashboard />} />
+                      <Route path="/alertas" element={<AlertasDashboard />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
