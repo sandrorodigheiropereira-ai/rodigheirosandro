@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { DollarSign, ShoppingCart, Users, TrendingUp, TrendingDown, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency } from '@/lib/calculations';
@@ -29,11 +29,11 @@ export default function UnidadeDashboard() {
 
   const unidades = useMemo(() => getUnidadesFromData(allRecords, regional), [allRecords, regional]);
 
-  useMemo(() => {
+  useEffect(() => {
     if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
 
-  useMemo(() => {
+  useEffect(() => {
     if (unidades.length > 0 && (!unidade || !unidades.includes(unidade))) {
       setUnidade(unidades[0]);
     }
