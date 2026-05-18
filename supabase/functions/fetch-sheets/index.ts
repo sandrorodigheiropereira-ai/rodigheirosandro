@@ -1,32 +1,40 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://rodigheirosandro.lovable.app',
+  'http://localhost:5173',
+  'http://localhost:8080',
+];
+
+function getCorsHeaders(origin: string | null) {
+  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  };
+}
 
 const SPREADSHEET_ID = '1-CinFq0rTXDGlGgFFQZ22Vfr2qraQeoSbhyET3p8oxA';
 
 function parseBrazilianNumber(value: string): number {
   if (!value || value.trim() === '') return 0;
-  // Remove percentage sign
   const cleaned = value.replace('%', '').trim();
-  // Brazilian format: 1.234.567,89 → 1234567.89
   const normalized = cleaned.replace(/\./g, '').replace(',', '.');
   const num = parseFloat(normalized);
   return isNaN(num) ? 0 : num;
 }
 
 function parseDate(value: string): string {
-  // Input: "01/01/2026" → Output: "01/2026" (MM/YYYY)
   const parts = value.split('/');
   if (parts.length === 3) {
-    return `${parts[1]}/${parts[2]}`; // month/year
+    return `${parts[1]}/${parts[2]}`;
   }
   return value;
 }
 
 interface SheetRow {
+  id: string;
   data: string;
   regional: string;
   unidade: string;
@@ -76,7 +84,41 @@ function parseCSV(csv: string): string[][] {
   return rows;
 }
 
+const HEADER_MAP: Record<string, string> = {
+  'data':            'data',
+  'regional':        'regional',
+  'unidade':         'unidade',
+  'receita bruta':   'receitaBruta',
+  'impostos':        'impostos',
+  'receita liquida': 'receitaLiquida',
+  'receita líquida': 'receitaLiquida',
+  'mao de obra':     'maoDeObra',
+  'mão de obra':     'maoDeObra',
+  'materia prima':   'materiaPrima',
+  'matéria prima':   'materiaPrima',
+  'cmv':             'cmv',
+  'despesa total':   'despesaTotal',
+  'meta':            'meta',
+  'margem':          'margem',
+};
+
+function buildIndexMap(headers: string[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  headers.forEach((h, i) => {
+    const normalized = h.trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const key = Object.keys(HEADER_MAP).find(k =>
+      k.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === normalized
+    );
+    if (key) map[HEADER_MAP[key]] = i;
+  });
+  return map;
+}
+
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -98,33 +140,40 @@ serve(async (req) => {
       });
     }
 
-    // Skip header row
+    const headerRow = rows[0].map(h => h.trim());
+    const idx = buildIndexMap(headerRow);
+    const useFallback = Object.keys(idx).length < 8;
+
+    const col = (row: string[], field: string, legacyPos: number): string => {
+      if (useFallback) return row[legacyPos] || '';
+      const i = idx[field];
+      return i !== undefined ? (row[i] || '') : '';
+    };
+
     const dataRows = rows.slice(1);
     let idCounter = 0;
 
     const records: SheetRow[] = dataRows.map((cols) => {
-      // CMV in sheet is a percentage string like "53,87%" — convert to absolute value
-      const receitaLiquida = parseBrazilianNumber(cols[5] || '');
-      const cmvPercent = parseBrazilianNumber(cols[8] || '');
-      // If CMV looks like a percentage (< 100), compute absolute from receita liquida
+      const receitaLiquida = parseBrazilianNumber(col(cols, 'receitaLiquida', 5));
+      const cmvPercent = parseBrazilianNumber(col(cols, 'cmv', 8));
       const cmv = cmvPercent < 100 && cmvPercent > 0
         ? (cmvPercent / 100) * receitaLiquida
         : cmvPercent;
 
       return {
         id: `rec-${++idCounter}`,
-        data: parseDate(cols[0] || ''),
-        regional: (cols[1] || '').trim(),
-        unidade: (cols[2] || '').trim(),
-        receitaBruta: parseBrazilianNumber(cols[3] || ''),
-        impostos: parseBrazilianNumber(cols[4] || ''),
+        data: parseDate(col(cols, 'data', 0)),
+        regional: col(cols, 'regional', 1).trim(),
+        unidade: col(cols, 'unidade', 2).trim(),
+        receitaBruta: parseBrazilianNumber(col(cols, 'receitaBruta', 3)),
+        impostos: parseBrazilianNumber(col(cols, 'impostos', 4)),
         receitaLiquida,
-        maoDeObra: parseBrazilianNumber(cols[6] || ''),
-        materiaPrima: parseBrazilianNumber(cols[7] || ''),
+        maoDeObra: parseBrazilianNumber(col(cols, 'maoDeObra', 6)),
+        materiaPrima: parseBrazilianNumber(col(cols, 'materiaPrima', 7)),
         cmv,
-        despesaTotal: parseBrazilianNumber(cols[9] || ''),
-        meta: parseBrazilianNumber(cols[10] || ''),
-        margem: parseBrazilianNumber(cols[11] || ''),
+        despesaTotal: parseBrazilianNumber(col(cols, 'despesaTotal', 9)),
+        meta: parseBrazilianNumber(col(cols, 'meta', 10)),
+        margem: parseBrazilianNumber(col(cols, 'margem', 11)),
       };
     });
 
