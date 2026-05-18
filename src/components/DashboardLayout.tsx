@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +13,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <span className="text-sm text-muted-foreground">Plataforma de Gestão Financeira</span>
           </header>
           <main className="flex-1 p-6 overflow-auto">
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </main>
         </div>
       </div>
