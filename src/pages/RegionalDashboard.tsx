@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
@@ -30,7 +30,7 @@ export default function RegionalDashboard() {
     [allRecords]
   );
 
-  useMemo(() => {
+  useEffect(() => {
     if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
 
