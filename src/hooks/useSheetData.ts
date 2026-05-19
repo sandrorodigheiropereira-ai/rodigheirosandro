@@ -9,9 +9,27 @@ interface SheetResponse {
 }
 
 async function fetchSheetData(): Promise<SheetResponse> {
-  const { data, error } = await supabase.functions.invoke('fetch-sheets');
-  if (error) throw new Error(error.message);
-  return data as SheetResponse;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const functionUrl = `${supabaseUrl}/functions/v1/fetch-sheets`;
+  const { data: sessionData } = await supabase.auth.getSession();
+
+  const response = await fetch(functionUrl, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseKey,
+      authorization: `Bearer ${sessionData.session?.access_token ?? supabaseKey}`,
+      'content-type': 'application/json',
+      'x-client-info': 'maissabor-dashboard',
+    },
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Failed to fetch sheet data: ${response.status}`);
+  }
+
+  return await response.json() as SheetResponse;
 }
 
 export function useSheetData() {
