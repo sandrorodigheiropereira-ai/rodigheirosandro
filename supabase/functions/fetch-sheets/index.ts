@@ -26,11 +26,22 @@ function parseBrazilianNumber(value: string): number {
 }
 
 function parseDate(value: string): string {
-  const parts = value.split('/');
-  if (parts.length === 3) {
+  if (!value || value.trim() === '') return '';
+  const v = value.trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
+    const parts = v.split('/');
     return `${parts[1]}/${parts[2]}`;
   }
-  return value;
+  if (/^\d{2}\/\d{4}$/.test(v)) return v;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const parts = v.split('-');
+    return `${parts[1]}/${parts[0]}`;
+  }
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(v)) {
+    const parts = v.split('/');
+    return `${parts[0].padStart(2, '0')}/${parts[2]}`;
+  }
+  return v;
 }
 
 interface SheetRow {
