@@ -33,11 +33,11 @@ const App = () => (
                   <DashboardLayout>
                     <Routes>
                       <Route path="/" element={<ConsolidadoDashboard />} />
-                      <Route path="/briefing" element={<MorningBriefing />} />
                       <Route path="/regional" element={<RegionalDashboard />} />
                       <Route path="/unidade" element={<UnidadeDashboard />} />
                       <Route path="/administrativo" element={<AdministrativoDashboard />} />
                       <Route path="/alertas" element={<AlertasDashboard />} />
+                      <Route path="/briefing" element={<MorningBriefing />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
