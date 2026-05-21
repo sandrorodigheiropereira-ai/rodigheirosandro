@@ -70,9 +70,17 @@ export default function UnidadeDashboard() {
     const byMonth = groupBy(unidadeRecords, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
       const m = calcMetrics(recs);
-      return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal };
+      return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal, cmvPct: m.cmvPercent, maoDeObraPct: m.maoDeObraPercent, margem: m.margem };
     });
   }, [unidadeRecords]);
+
+  const sparklines = useMemo(() => ({
+    receita: monthlyData.map(d => d.receita),
+    cmv: monthlyData.map(d => d.cmvPct),
+    maoDeObra: monthlyData.map(d => d.maoDeObraPct),
+    despesa: monthlyData.map(d => d.despesa),
+    margem: monthlyData.map(d => d.margem),
+  }), [monthlyData]);
 
   if (isLoading) {
     return (
