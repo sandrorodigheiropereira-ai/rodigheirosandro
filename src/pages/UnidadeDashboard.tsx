@@ -70,9 +70,17 @@ export default function UnidadeDashboard() {
     const byMonth = groupBy(unidadeRecords, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
       const m = calcMetrics(recs);
-      return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal };
+      return { mes: month, receita: m.receitaBruta, cmv: recs.reduce((s, r) => s + r.cmv, 0), maoDeObra: recs.reduce((s, r) => s + r.maoDeObra, 0), despesa: m.despesaTotal, cmvPct: m.cmvPercent, maoDeObraPct: m.maoDeObraPercent, margem: m.margem };
     });
   }, [unidadeRecords]);
+
+  const sparklines = useMemo(() => ({
+    receita: monthlyData.map(d => d.receita),
+    cmv: monthlyData.map(d => d.cmvPct),
+    maoDeObra: monthlyData.map(d => d.maoDeObraPct),
+    despesa: monthlyData.map(d => d.despesa),
+    margem: monthlyData.map(d => d.margem),
+  }), [monthlyData]);
 
   if (isLoading) {
     return (
@@ -142,11 +150,11 @@ export default function UnidadeDashboard() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard title="Receita" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} />
-        <KpiCard title="CMV" value={metrics.cmvPercent} format="percent" change={prevMetrics ? metrics.cmvPercent - prevMetrics.cmvPercent : undefined} subtitle={periodLabel} icon={<ShoppingCart className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Mão de Obra" value={metrics.maoDeObraPercent} format="percent" change={prevMetrics ? metrics.maoDeObraPercent - prevMetrics.maoDeObraPercent : undefined} subtitle={periodLabel} icon={<Users className="w-5 h-5" />} delay={0.2} />
-        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.3} />
-        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.4} />
+        <KpiCard title="Receita" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} sparkline={sparklines.receita} />
+        <KpiCard title="CMV" value={metrics.cmvPercent} format="percent" change={prevMetrics ? metrics.cmvPercent - prevMetrics.cmvPercent : undefined} subtitle={periodLabel} icon={<ShoppingCart className="w-5 h-5" />} delay={0.1} sparkline={sparklines.cmv} invertTrend />
+        <KpiCard title="Mão de Obra" value={metrics.maoDeObraPercent} format="percent" change={prevMetrics ? metrics.maoDeObraPercent - prevMetrics.maoDeObraPercent : undefined} subtitle={periodLabel} icon={<Users className="w-5 h-5" />} delay={0.2} sparkline={sparklines.maoDeObra} invertTrend />
+        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.3} sparkline={sparklines.despesa} invertTrend />
+        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.4} sparkline={sparklines.margem} />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-4">
