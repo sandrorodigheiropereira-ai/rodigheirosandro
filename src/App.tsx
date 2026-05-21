@@ -11,6 +11,7 @@ import RegionalDashboard from "./pages/RegionalDashboard";
 import UnidadeDashboard from "./pages/UnidadeDashboard";
 import AdministrativoDashboard from "./pages/AdministrativoDashboard";
 import AlertasDashboard from "./pages/AlertasDashboard";
+import MorningBriefing from "./pages/MorningBriefing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound.tsx";
 
