@@ -81,6 +81,20 @@ export default function RegionalDashboard() {
     }));
   }, [filtered]);
 
+  const monthlyData = useMemo(() => {
+    const byMonth = groupBy(filtered, 'data');
+    return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
+      const m = calcMetrics(recs);
+      return { mes: month, receita: m.receitaBruta, despesa: m.despesaTotal, margem: m.margem, cmv: m.cmvPercent };
+    });
+  }, [filtered]);
+
+  const sparklines = useMemo(() => ({
+    receita: monthlyData.map(d => d.receita),
+    despesa: monthlyData.map(d => d.despesa),
+    margem: monthlyData.map(d => d.margem),
+  }), [monthlyData]);
+
   const costData = useMemo(() => {
     const mao = filtered.reduce((s, r) => s + r.maoDeObra, 0);
     const imp = filtered.reduce((s, r) => s + r.impostos, 0);
