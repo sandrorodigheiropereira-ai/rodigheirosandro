@@ -1,6 +1,5 @@
-import { AlertTriangle, AlertCircle, Info, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { Alert as AlertType } from '@/types/financial';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
 interface AlertsPanelProps {
@@ -46,10 +45,7 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
     return (
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Alertas</h3>
-        <div className="flex items-center gap-3 p-4 rounded-lg border border-success/30 bg-success/5">
-          <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
-          <p className="text-xs text-muted-foreground">Nenhum alerta ativo no período selecionado.</p>
-        </div>
+        <p className="text-xs text-muted-foreground">Nenhum alerta ativo no período selecionado.</p>
       </div>
     );
   }
@@ -85,35 +81,29 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
       </div>
 
       <div className="space-y-2">
-        <AnimatePresence initial={false}>
-          {visible.map((alert, i) => {
-            const Icon = icons[alert.type];
-            return (
-              <motion.div
-                key={`${alert.unidade}-${alert.message}-${i}`}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ delay: i * 0.03 }}
-                className={`flex items-start gap-3 p-3 rounded-lg border ${colors[alert.type]}`}
-              >
-                <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconColors[alert.type]}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium truncate">{alert.unidade}</p>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${badgeColors[alert.type]}`}>
-                      {badgeLabels[alert.type]}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{alert.message}</p>
-                  {alert.regional && (
-                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">{alert.regional}</p>
-                  )}
+        {visible.map((alert, i) => {
+          const Icon = icons[alert.type];
+          return (
+            <div
+              key={`${alert.unidade}-${alert.message}-${i}`}
+              className={`flex items-start gap-3 p-3 rounded-lg border ${colors[alert.type]}`}
+            >
+              <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconColors[alert.type]}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium truncate">{alert.unidade}</p>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${badgeColors[alert.type]}`}>
+                    {badgeLabels[alert.type]}
+                  </span>
                 </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                <p className="text-xs text-muted-foreground">{alert.message}</p>
+                {alert.regional && (
+                  <p className="text-[10px] text-muted-foreground/70 mt-0.5">{alert.regional}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {hasMore && (
