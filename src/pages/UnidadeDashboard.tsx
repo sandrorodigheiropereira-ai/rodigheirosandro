@@ -242,22 +242,94 @@ export default function UnidadeDashboard() {
         })()}
       </motion.div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Evolução Mensal</h3>
-        <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
-            <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
-            <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }} />
-            <Tooltip contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)' }}
-              formatter={(v: number) => formatCurrency(v)} />
-            <Legend />
-            <Line type="monotone" dataKey="receita" name="Receita" stroke="hsl(162 72% 46%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="cmv" name="CMV" stroke="hsl(38 92% 55%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="maoDeObra" name="Mão de Obra" stroke="hsl(280 65% 60%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="despesa" name="Despesa Total" stroke="hsl(210 90% 60%)" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5 space-y-6">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Histórico de Evolução</h3>
+
+        {monthlyData.length < 2 ? (
+          <div className="rounded-lg border border-border bg-secondary/40 p-6 text-center">
+            <p className="text-xs text-muted-foreground">Dados insuficientes para exibir o histórico. Selecione mais meses ou escolha outra unidade.</p>
+          </div>
+        ) : (
+          <>
+            {/* Receita vs Despesa Total */}
+            <div className="rounded-lg border border-border bg-secondary/30 p-4">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">Receita vs Despesa Total</h4>
+                <div className="flex items-center gap-4 text-[10px]">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#1D9E75' }} />Receita</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#E24B4A' }} />Despesa</span>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+                  <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} />
+                  <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} width={45} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)', fontSize: '12px' }}
+                    formatter={(v: number) => formatCurrency(v)}
+                  />
+                  <Line type="monotone" dataKey="receita" name="Receita" stroke="#1D9E75" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="despesa" name="Despesa" stroke="#E24B4A" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Margem vs Meta */}
+            <div className="rounded-lg border border-border bg-secondary/30 p-4">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">Margem (%) vs Meta</h4>
+                <div className="flex items-center gap-4 text-[10px]">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#378ADD' }} />Margem</span>
+                  <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 border-t-2 border-dashed" style={{ borderColor: '#EF9F27' }} />Meta</span>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={monthlyData.map(d => ({ ...d, meta: metrics.meta }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+                  <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} />
+                  <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} width={45} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)', fontSize: '12px' }}
+                    formatter={(v: number) => `${v.toFixed(1)}%`}
+                  />
+                  <Line type="monotone" dataKey="margem" name="Margem" stroke="#378ADD" strokeWidth={2} dot={(props: any) => {
+                    const { cx, cy, payload, index } = props;
+                    const color = payload.margem < 0 ? '#E24B4A' : payload.margem < metrics.meta ? '#EF9F27' : '#1D9E75';
+                    return <circle key={index} cx={cx} cy={cy} r={4} fill={color} stroke={color} />;
+                  }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="meta" name="Meta" stroke="#EF9F27" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* CMV vs Mão de Obra */}
+            <div className="rounded-lg border border-border bg-secondary/30 p-4">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">CMV vs Mão de Obra (%)</h4>
+                <div className="flex items-center gap-4 text-[10px]">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#EF9F27' }} />CMV</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#A78BFA' }} />Mão de Obra</span>
+                  <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 border-t-2 border-dashed" style={{ borderColor: '#E24B4A' }} />Limite 40%</span>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
+                  <XAxis dataKey="mes" tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} />
+                  <YAxis tickFormatter={(v) => `${v.toFixed(0)}%`} tick={{ fill: 'hsl(215 20% 55%)', fontSize: 11 }} width={45} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'hsl(222 44% 9%)', border: '1px solid hsl(222 30% 18%)', borderRadius: '8px', color: 'hsl(210 40% 96%)', fontSize: '12px' }}
+                    formatter={(v: number) => `${v.toFixed(1)}%`}
+                  />
+                  <ReferenceLine y={40} stroke="#E24B4A" strokeDasharray="5 5" />
+                  <Line type="monotone" dataKey="cmv" name="CMV" stroke="#EF9F27" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="maoDeObra" name="Mão de Obra" stroke="#A78BFA" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </>
+        )}
       </motion.div>
     </div>
   );
