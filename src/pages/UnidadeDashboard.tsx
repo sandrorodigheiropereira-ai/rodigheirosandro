@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MultiSelectUnidade } from '@/components/MultiSelectUnidade';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
