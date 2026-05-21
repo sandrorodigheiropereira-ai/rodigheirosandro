@@ -81,6 +81,20 @@ export default function RegionalDashboard() {
     }));
   }, [filtered]);
 
+  const monthlyData = useMemo(() => {
+    const byMonth = groupBy(filtered, 'data');
+    return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
+      const m = calcMetrics(recs);
+      return { mes: month, receita: m.receitaBruta, despesa: m.despesaTotal, margem: m.margem, cmv: m.cmvPercent };
+    });
+  }, [filtered]);
+
+  const sparklines = useMemo(() => ({
+    receita: monthlyData.map(d => d.receita),
+    despesa: monthlyData.map(d => d.despesa),
+    margem: monthlyData.map(d => d.margem),
+  }), [monthlyData]);
+
   const costData = useMemo(() => {
     const mao = filtered.reduce((s, r) => s + r.maoDeObra, 0);
     const imp = filtered.reduce((s, r) => s + r.impostos, 0);
@@ -156,9 +170,9 @@ export default function RegionalDashboard() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} />
-        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.1} />
-        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
+        <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} sparkline={sparklines.receita} />
+        <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.1} sparkline={sparklines.despesa} invertTrend />
+        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} sparkline={sparklines.margem} />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-5">
