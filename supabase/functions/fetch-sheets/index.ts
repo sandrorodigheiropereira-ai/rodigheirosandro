@@ -1,13 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const ALLOWED_ORIGINS = [
-  'https://rodigheirosandro.lovable.app',
-  'http://localhost:5173',
-  'http://localhost:8080',
-];
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  return (
+    /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin) ||
+    origin === 'http://localhost:5173' ||
+    origin === 'http://localhost:8080'
+  );
+}
 
 function getCorsHeaders(origin: string | null) {
-  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = isAllowedOrigin(origin) ? origin! : 'https://lovable.app';
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -27,37 +30,34 @@ function parseBrazilianNumber(value: string): number {
 
 function parseDate(value: string): string {
   if (!value || value.trim() === '') return '';
-  const v = value.trim();
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
-    const parts = v.split('/');
-    return `${parts[1]}/${parts[2]}`;
-  }
-  if (/^\d{2}\/\d{4}$/.test(v)) return v;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-    const parts = v.split('-');
-    return `${parts[1]}/${parts[0]}`;
-  }
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(v)) {
-    const parts = v.split('/');
-    return `${parts[0].padStart(2, '0')}/${parts[2]}`;
-  }
-  return v;
-}
+  const v = value.trim().replace(/^"|"$/g, '');
 
-interface SheetRow {
-  id: string;
-  data: string;
-  regional: string;
-  unidade: string;
-  receitaBruta: number;
-  impostos: number;
-  receitaLiquida: number;
-  maoDeObra: number;
-  materiaPrima: number;
-  cmv: number;
-  despesaTotal: number;
-  meta: number;
-  margem: number;
+  if (/^\d{2}\/\d{4}$/.test(v)) return v;
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
+    const p = v.split('/');
+    return `${p[1]}/${p[2]}`;
+  }
+
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(v)) {
+    const p = v.split('/');
+    return `${p[0].padStart(2,'0')}/${p[2]}`;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const p = v.split('-');
+    return `${p[1]}/${p[0]}`;
+  }
+
+  if (/^\d{4,5}$/.test(v)) {
+    const serial = parseInt(v);
+    const date = new Date((serial - 25569) * 86400 * 1000);
+    const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = date.getUTCFullYear();
+    return `${mm}/${yyyy}`;
+  }
+
+  return v;
 }
 
 function parseCSV(csv: string): string[][] {
@@ -65,65 +65,25 @@ function parseCSV(csv: string): string[][] {
   let current = '';
   let inQuotes = false;
   let row: string[] = [];
-
   for (let i = 0; i < csv.length; i++) {
     const char = csv[i];
     if (char === '"') {
-      if (inQuotes && csv[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
+      if (inQuotes && csv[i + 1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
     } else if (char === ',' && !inQuotes) {
-      row.push(current);
-      current = '';
+      row.push(current); current = '';
     } else if ((char === '\n' || char === '\r') && !inQuotes) {
       if (char === '\r' && csv[i + 1] === '\n') i++;
-      row.push(current);
-      current = '';
+      row.push(current); current = '';
       if (row.some(cell => cell.trim() !== '')) rows.push(row);
       row = [];
-    } else {
-      current += char;
-    }
+    } else { current += char; }
   }
   if (current || row.length > 0) {
     row.push(current);
     if (row.some(cell => cell.trim() !== '')) rows.push(row);
   }
   return rows;
-}
-
-const HEADER_MAP: Record<string, string> = {
-  'data':            'data',
-  'regional':        'regional',
-  'unidade':         'unidade',
-  'receita bruta':   'receitaBruta',
-  'impostos':        'impostos',
-  'receita liquida': 'receitaLiquida',
-  'receita líquida': 'receitaLiquida',
-  'mao de obra':     'maoDeObra',
-  'mão de obra':     'maoDeObra',
-  'materia prima':   'materiaPrima',
-  'matéria prima':   'materiaPrima',
-  'cmv':             'cmv',
-  'despesa total':   'despesaTotal',
-  'meta':            'meta',
-  'margem':          'margem',
-};
-
-function buildIndexMap(headers: string[]): Record<string, number> {
-  const map: Record<string, number> = {};
-  headers.forEach((h, i) => {
-    const normalized = h.trim().toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const key = Object.keys(HEADER_MAP).find(k =>
-      k.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === normalized
-    );
-    if (key) map[HEADER_MAP[key]] = i;
-  });
-  return map;
 }
 
 serve(async (req) => {
@@ -137,10 +97,7 @@ serve(async (req) => {
   try {
     const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=BASE_FINANCEIRA`;
     const response = await fetch(csvUrl);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch spreadsheet: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Failed to fetch spreadsheet: ${response.status}`);
 
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -151,40 +108,32 @@ serve(async (req) => {
       });
     }
 
-    const headerRow = rows[0].map(h => h.trim());
-    const idx = buildIndexMap(headerRow);
-    const useFallback = Object.keys(idx).length < 8;
-
-    const col = (row: string[], field: string, legacyPos: number): string => {
-      if (useFallback) return row[legacyPos] || '';
-      const i = idx[field];
-      return i !== undefined ? (row[i] || '') : '';
-    };
+    console.log('Raw date value col[0]:', JSON.stringify(rows[1][0]));
 
     const dataRows = rows.slice(1);
     let idCounter = 0;
 
-    const records: SheetRow[] = dataRows.map((cols) => {
-      const receitaLiquida = parseBrazilianNumber(col(cols, 'receitaLiquida', 5));
-      const cmvPercent = parseBrazilianNumber(col(cols, 'cmv', 8));
+    const records = dataRows.map((cols) => {
+      const receitaLiquida = parseBrazilianNumber(cols[5] || '');
+      const cmvPercent = parseBrazilianNumber(cols[8] || '');
       const cmv = cmvPercent < 100 && cmvPercent > 0
         ? (cmvPercent / 100) * receitaLiquida
         : cmvPercent;
 
       return {
         id: `rec-${++idCounter}`,
-        data: parseDate(col(cols, 'data', 0)),
-        regional: col(cols, 'regional', 1).trim(),
-        unidade: col(cols, 'unidade', 2).trim(),
-        receitaBruta: parseBrazilianNumber(col(cols, 'receitaBruta', 3)),
-        impostos: parseBrazilianNumber(col(cols, 'impostos', 4)),
+        data: parseDate(cols[0] || ''),
+        regional: (cols[1] || '').trim(),
+        unidade: (cols[2] || '').trim(),
+        receitaBruta: parseBrazilianNumber(cols[3] || ''),
+        impostos: parseBrazilianNumber(cols[4] || ''),
         receitaLiquida,
-        maoDeObra: parseBrazilianNumber(col(cols, 'maoDeObra', 6)),
-        materiaPrima: parseBrazilianNumber(col(cols, 'materiaPrima', 7)),
+        maoDeObra: parseBrazilianNumber(cols[6] || ''),
+        materiaPrima: parseBrazilianNumber(cols[7] || ''),
         cmv,
-        despesaTotal: parseBrazilianNumber(col(cols, 'despesaTotal', 9)),
-        meta: parseBrazilianNumber(col(cols, 'meta', 10)),
-        margem: parseBrazilianNumber(col(cols, 'margem', 11)),
+        despesaTotal: parseBrazilianNumber(cols[9] || ''),
+        meta: parseBrazilianNumber(cols[10] || ''),
+        margem: parseBrazilianNumber(cols[11] || ''),
       };
     });
 
