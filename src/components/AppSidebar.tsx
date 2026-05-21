@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 
 const items = [
+  { title: 'Briefing', url: '/briefing', icon: Coffee },
   { title: 'Consolidado', url: '/', icon: LayoutDashboard },
   { title: 'Regional', url: '/regional', icon: Map },
   { title: 'Unidade', url: '/unidade', icon: Building2 },
