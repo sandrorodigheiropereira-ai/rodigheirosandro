@@ -1,4 +1,4 @@
-import { LayoutDashboard, Map, Building2, Briefcase, ExternalLink, LogOut, BellRing } from 'lucide-react';
+import { LayoutDashboard, Map, Building2, Briefcase, ExternalLink, LogOut, BellRing, Coffee } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { CompanyLogo } from '@/components/CompanyLogo';
 import { useAuth } from '@/hooks/useAuth';
