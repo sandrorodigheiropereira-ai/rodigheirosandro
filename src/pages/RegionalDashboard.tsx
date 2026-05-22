@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
-import { calcMetrics, groupBy, formatCurrency, rankUnidades } from '@/lib/calculations';
+import { calcMetrics, groupBy, formatCurrency, formatPercent, rankUnidades, calcHealthScores } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
 import { RankingPanel } from '@/components/RankingPanel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -72,15 +72,6 @@ export default function RegionalDashboard() {
     ? `${periodCurrentLabel} ${periodLabel}`
     : periodCurrentLabel;
 
-  const unidadeData = useMemo(() => {
-    const byUnidade = groupBy(filtered, 'unidade');
-    return Object.entries(byUnidade).map(([name, recs]) => ({
-      unidade: name,
-      receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
-      despesa: recs.reduce((s, r) => s + r.despesaTotal, 0),
-    }));
-  }, [filtered]);
-
   const monthlyData = useMemo(() => {
     const byMonth = groupBy(filtered, 'data');
     return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([month, recs]) => {
@@ -93,7 +84,19 @@ export default function RegionalDashboard() {
     receita: monthlyData.map(d => d.receita),
     despesa: monthlyData.map(d => d.despesa),
     margem: monthlyData.map(d => d.margem),
+    cmv: monthlyData.map(d => d.cmv),
   }), [monthlyData]);
+
+  const healthScores = useMemo(() => calcHealthScores(filtered), [filtered]);
+
+  const unidadeData = useMemo(() => {
+    const byUnidade = groupBy(filtered, 'unidade');
+    return Object.entries(byUnidade).map(([name, recs]) => ({
+      unidade: name,
+      receita: recs.reduce((s, r) => s + r.receitaBruta, 0),
+      despesa: recs.reduce((s, r) => s + r.despesaTotal, 0),
+    }));
+  }, [filtered]);
 
   const costData = useMemo(() => {
     const mao = filtered.reduce((s, r) => s + r.maoDeObra, 0);
@@ -172,7 +175,7 @@ export default function RegionalDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard title="Receita Total" value={metrics.receitaBruta} format="currency" change={pct(metrics.receitaBruta, prevMetrics?.receitaBruta)} subtitle={periodLabel} icon={<DollarSign className="w-5 h-5" />} sparkline={sparklines.receita} />
         <KpiCard title="Despesa Total" value={metrics.despesaTotal} format="currency" change={pct(metrics.despesaTotal, prevMetrics?.despesaTotal)} subtitle={periodLabel} icon={<TrendingUp className="w-5 h-5" />} delay={0.1} sparkline={sparklines.despesa} invertTrend />
-        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} sparkline={sparklines.margem} />
+        <KpiCard title="Margem (%)" value={metrics.margem} format="percent" change={prevMetrics ? metrics.margem - prevMetrics.margem : undefined} subtitle={`Meta: ${metrics.meta.toFixed(1)}%`} icon={<Percent className="w-5 h-5" />} delay={0.2} />
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-5">
@@ -249,6 +252,65 @@ export default function RegionalDashboard() {
         </div>
         <RankingPanel data={ranking} previousData={prevRanking} format={rankFormat} title="Ranking de Unidades" metricLabel={metricLabel} subtitle={rankingSubtitle} />
       </div>
+
+      {/* Ranking por Score de Saúde */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass-card rounded-xl p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Ranking por Score de Saúde
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left p-2 pb-3 font-semibold text-muted-foreground uppercase tracking-wider">#</th>
+                <th className="text-left p-2 pb-3 font-semibold text-muted-foreground uppercase tracking-wider">Unidade</th>
+                <th className="text-center p-2 pb-3 font-semibold text-muted-foreground uppercase tracking-wider">Score</th>
+                <th className="text-right p-2 pb-3 font-semibold text-muted-foreground uppercase tracking-wider">Receita</th>
+                <th className="text-right p-2 pb-3 font-semibold text-muted-foreground uppercase tracking-wider">Margem</th>
+                <th className="text-right p-2 pb-3 font-semibold text-muted-foreground uppercase tracking-wider">CMV</th>
+                <th className="text-right p-2 pb-3 font-semibold text-muted-foreground uppercase tracking-wider">MdO</th>
+              </tr>
+            </thead>
+            <tbody>
+              {healthScores.map((u, i) => {
+                const scoreColor = u.grade === 'green' ? 'text-success' : u.grade === 'yellow' ? 'text-warning' : 'text-danger';
+                const scoreBg = u.grade === 'green' ? 'bg-success' : u.grade === 'yellow' ? 'bg-warning' : 'bg-danger';
+                return (
+                  <tr key={u.unidade} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                    <td className="p-2 py-3 text-muted-foreground font-medium">{i + 1}</td>
+                    <td className="p-2 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${scoreBg}`} />
+                        <span className="font-medium">{u.unidade}</span>
+                      </div>
+                    </td>
+                    <td className="p-2 py-3 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`text-sm font-bold ${scoreColor}`}>{u.score}</span>
+                        <div className="w-16 h-1 rounded-full bg-secondary">
+                          <div className={`h-1 rounded-full ${scoreBg}`} style={{ width: `${u.score}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2 py-3 text-right text-muted-foreground">
+                      {formatCurrency(filtered.filter(r => r.unidade === u.unidade).reduce((s, r) => s + r.receitaBruta, 0))}
+                    </td>
+                    <td className={`p-2 py-3 text-right font-medium ${u.metrics.margem < 0 ? 'text-danger' : u.metrics.margem < 5 ? 'text-warning' : 'text-success'}`}>
+                      {formatPercent(u.metrics.margem)}
+                    </td>
+                    <td className={`p-2 py-3 text-right font-medium ${u.metrics.cmvPercent > 50 ? 'text-danger' : u.metrics.cmvPercent > 40 ? 'text-warning' : 'text-success'}`}>
+                      {formatPercent(u.metrics.cmvPercent)}
+                    </td>
+                    <td className={`p-2 py-3 text-right font-medium ${u.metrics.maoDeObraPercent > 35 ? 'text-danger' : u.metrics.maoDeObraPercent > 30 ? 'text-warning' : 'text-success'}`}>
+                      {formatPercent(u.metrics.maoDeObraPercent)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
     </div>
   );
 }
