@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSheetData, getRegionaisFromData } from '@/hooks/useSheetData';
 import { calcMetrics, generateAlerts, groupBy, formatCurrency, formatPercent, rankUnidades, calcHealthScores, HealthScore } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
@@ -17,6 +17,96 @@ function getFormattedDate(): string {
   return new Date().toLocaleDateString('pt-BR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
+}
+
+interface RegionalItem {
+  regional: string;
+  receita: number;
+  margem: number;
+  cmvPercent: number;
+  avgScore: number;
+  unidades: any[];
+}
+
+function RegionalRankingRow({ reg, ri, lastMonthRecords, formatCurrency, formatPercent }: {
+  reg: RegionalItem; ri: number; lastMonthRecords: any[]; formatCurrency: (v: number) => string; formatPercent: (v: number) => string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const scoreColor = reg.avgScore >= 80 ? 'text-success' : reg.avgScore >= 50 ? 'text-warning' : 'text-danger';
+  const scoreBg = reg.avgScore >= 80 ? 'bg-success' : reg.avgScore >= 50 ? 'bg-warning' : 'bg-danger';
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors text-left"
+      >
+        <span className="text-xs font-bold text-muted-foreground w-5 shrink-0">{ri + 1}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-sm font-semibold">{reg.regional}</span>
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-xs text-muted-foreground">{formatCurrency(reg.receita)}</span>
+              <span className={`text-xs font-medium ${reg.margem < 0 ? 'text-danger' : reg.margem < 5 ? 'text-warning' : 'text-success'}`}>
+                {formatPercent(reg.margem)}
+              </span>
+              <span className={`text-sm font-bold ${scoreColor}`}>{reg.avgScore}</span>
+            </div>
+          </div>
+          <div className="w-full h-1.5 rounded-full bg-secondary">
+            <div className={`h-1.5 rounded-full ${scoreBg}`} style={{ width: `${reg.avgScore}%` }} />
+          </div>
+        </div>
+        <span className="text-muted-foreground text-xs shrink-0">{expanded ? '▲' : '▼'}</span>
+      </button>
+      {expanded && (
+        <div className="border-t border-border">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-secondary/50">
+                <th className="text-left p-2 pl-4 font-medium text-muted-foreground">#</th>
+                <th className="text-left p-2 font-medium text-muted-foreground">Unidade</th>
+                <th className="text-right p-2 font-medium text-muted-foreground">Score</th>
+                <th className="text-right p-2 font-medium text-muted-foreground">Receita</th>
+                <th className="text-right p-2 font-medium text-muted-foreground">Margem</th>
+                <th className="text-right p-2 pr-4 font-medium text-muted-foreground">CMV</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reg.unidades.map((u, ui) => {
+                const uc = u.grade === 'green' ? 'text-success' : u.grade === 'yellow' ? 'text-warning' : 'text-danger';
+                return (
+                  <tr key={u.unidade} className="border-t border-border/50 hover:bg-secondary/30 transition-colors">
+                    <td className="p-2 pl-4 text-muted-foreground font-medium">{ui + 1}</td>
+                    <td className="p-2 font-medium">{u.unidade}</td>
+                    <td className={`p-2 text-right font-bold ${uc}`}>{u.score}</td>
+                    <td className="p-2 text-right text-muted-foreground">{formatCurrency(lastMonthRecords.filter((r: any) => r.unidade === u.unidade).reduce((s: number, r: any) => s + r.receitaBruta, 0))}</td>
+                    <td className={`p-2 text-right font-medium ${u.metrics.margem < 0 ? 'text-danger' : u.metrics.margem < 5 ? 'text-warning' : 'text-success'}`}>
+                      {formatPercent(u.metrics.margem)}
+                    </td>
+                    <td className={`p-2 pr-4 text-right font-medium ${u.metrics.cmvPercent > 50 ? 'text-danger' : u.metrics.cmvPercent > 40 ? 'text-warning' : 'text-success'}`}>
+                      {formatPercent(u.metrics.cmvPercent)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RegionalRankingList({ rankingRegional, lastMonthRecords, formatCurrency, formatPercent }: {
+  rankingRegional: RegionalItem[]; lastMonthRecords: any[]; formatCurrency: (v: number) => string; formatPercent: (v: number) => string;
+}) {
+  return (
+    <div className="space-y-3">
+      {rankingRegional.map((reg, ri) => (
+        <RegionalRankingRow key={reg.regional} reg={reg} ri={ri} lastMonthRecords={lastMonthRecords} formatCurrency={formatCurrency} formatPercent={formatPercent} />
+      ))}
+    </div>
+  );
 }
 
 export default function MorningBriefing() {
@@ -57,6 +147,29 @@ export default function MorningBriefing() {
   );
 
   const healthScores = useMemo(() => calcHealthScores(lastMonthRecords), [lastMonthRecords]);
+
+  const rankingRegional = useMemo(() => {
+    return regionais.map(reg => {
+      const recs = lastMonthRecords.filter(r => r.regional === reg);
+      const m = calcMetrics(recs);
+      const rl = recs.reduce((s, r) => s + r.receitaLiquida, 0);
+      const mdo = recs.reduce((s, r) => s + r.maoDeObra, 0);
+      const mdoPct = rl > 0 ? (mdo / rl) * 100 : 0;
+      const unidadesReg = healthScores.filter(u => u.regional === reg);
+      const avgScore = unidadesReg.length > 0
+        ? Math.round(unidadesReg.reduce((s, u) => s + u.score, 0) / unidadesReg.length)
+        : 0;
+      return {
+        regional: reg,
+        receita: m.receitaBruta,
+        margem: m.margem,
+        cmvPercent: m.cmvPercent,
+        mdoPct,
+        avgScore,
+        unidades: unidadesReg.sort((a, b) => b.score - a.score),
+      };
+    }).sort((a, b) => b.avgScore - a.avgScore);
+  }, [regionais, lastMonthRecords, healthScores]);
 
   // Top 3 melhores unidades (por margem)
   const topMargem = useMemo(() =>
@@ -340,7 +453,21 @@ export default function MorningBriefing() {
         </div>
       </motion.div>
 
-      {/* Rankings */}
+      {/* Ranking Comparativo por Regional */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.32 }}
+        className="glass-card rounded-xl p-5 space-y-4"
+      >
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Ranking Comparativo por Regional
+        </h3>
+
+        <RegionalRankingList rankingRegional={rankingRegional} lastMonthRecords={lastMonthRecords} formatCurrency={formatCurrency} formatPercent={formatPercent} />
+      </motion.div>
+
+            {/* Rankings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <motion.div
