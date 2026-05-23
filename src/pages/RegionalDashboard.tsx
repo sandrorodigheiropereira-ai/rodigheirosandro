@@ -103,12 +103,15 @@ export default function RegionalDashboard() {
     const mao = filtered.reduce((s, r) => s + r.maoDeObra, 0);
     const imp = filtered.reduce((s, r) => s + r.impostos, 0);
     const mp = filtered.reduce((s, r) => s + (r.materiaPrima || 0), 0);
+    const prevMao = prevData?.reduce((s, r) => s + r.maoDeObra, 0);
+    const prevImp = prevData?.reduce((s, r) => s + r.impostos, 0);
+    const prevMp = prevData?.reduce((s, r) => s + (r.materiaPrima || 0), 0);
     return [
-      { name: 'Mão de Obra', value: mao },
-      { name: 'Impostos', value: imp },
-      { name: 'Matéria Prima', value: mp },
+      { name: 'Mão de Obra', value: mao, prevValue: prevMao, color: PIE_COLORS[0] },
+      { name: 'Impostos', value: imp, prevValue: prevImp, color: PIE_COLORS[1] },
+      { name: 'Matéria Prima', value: mp, prevValue: prevMp, color: PIE_COLORS[2] },
     ];
-  }, [filtered]);
+  }, [filtered, prevData]);
 
   if (isLoading) {
     return (
