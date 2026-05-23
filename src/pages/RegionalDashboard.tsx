@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MultiSelectUnidade } from '@/components/MultiSelectUnidade';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSheetData, getRegionaisFromData } from '@/hooks/useSheetData';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DonutChart } from '@/components/DonutChart';
 
 const PIE_COLORS = ['hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
 
