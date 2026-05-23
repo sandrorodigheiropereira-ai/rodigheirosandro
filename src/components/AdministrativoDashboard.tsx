@@ -311,13 +311,13 @@ export default function AdministrativoDashboard() {
             {
               name: 'Mão de Obra',
               value: filtered.reduce((s, r) => s + r.maoDeObra, 0),
-              prevValue: (() => { const monthsAvail = [...new Set(scopeAll.map(r => r.data))].filter(Boolean).sort(); const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1]; const refIdx = monthsAvail.indexOf(refMonth); const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null; return prevMonth ? scopeAll.filter(r => r.data === prevMonth).reduce((s, r) => s + r.maoDeObra, 0) : undefined; })(),
+              prevValue: (() => { const monthsAvail = [...new Set(admRecordsAll.map(r => r.data))].filter(Boolean).sort(); const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1]; const refIdx = monthsAvail.indexOf(refMonth); const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null; return prevMonth ? admRecordsAll.filter(r => r.data === prevMonth).reduce((s, r) => s + r.maoDeObra, 0) : undefined; })(),
               color: '#378ADD',
             },
             {
               name: 'Matéria Prima',
               value: filtered.reduce((s, r) => s + r.materiaPrima, 0),
-              prevValue: (() => { const monthsAvail = [...new Set(scopeAll.map(r => r.data))].filter(Boolean).sort(); const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1]; const refIdx = monthsAvail.indexOf(refMonth); const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null; return prevMonth ? scopeAll.filter(r => r.data === prevMonth).reduce((s, r) => s + r.materiaPrima, 0) : undefined; })(),
+              prevValue: (() => { const monthsAvail = [...new Set(admRecordsAll.map(r => r.data))].filter(Boolean).sort(); const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1]; const refIdx = monthsAvail.indexOf(refMonth); const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null; return prevMonth ? admRecordsAll.filter(r => r.data === prevMonth).reduce((s, r) => s + r.materiaPrima, 0) : undefined; })(),
               color: '#1D9E75',
             },
             {
