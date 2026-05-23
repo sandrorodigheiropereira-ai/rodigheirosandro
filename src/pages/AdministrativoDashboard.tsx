@@ -7,7 +7,8 @@ import { filterOnlyAdm, filterOutAdm, ADM_UNITS } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DonutChart } from '@/components/DonutChart';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -304,115 +305,28 @@ export default function AdministrativoDashboard() {
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-4">
         <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Mão de Obra vs Matéria Prima</h3>
-        {(() => {
-          const scopeAll = selectedUnit === 'all' ? admRecordsAll : admRecordsAll.filter(r => r.unidade === selectedUnit);
-          const monthsAvail = [...new Set(scopeAll.map(r => r.data))].filter(Boolean).sort();
-          const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1];
-          const refIdx = monthsAvail.indexOf(refMonth);
-          const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null;
-          const sumBy = (mes: string | null, key: 'maoDeObra' | 'materiaPrima') =>
-            mes ? scopeAll.filter(r => r.data === mes).reduce((s, r) => s + r[key], 0) : 0;
-
-          const pieData = [
-            { name: 'Mão de Obra', value: filtered.reduce((s, r) => s + r.maoDeObra, 0), key: 'maoDeObra' as const },
-            { name: 'Matéria Prima', value: filtered.reduce((s, r) => s + r.materiaPrima, 0), key: 'materiaPrima' as const },
-          ];
-          const total = pieData.reduce((s, d) => s + d.value, 0);
-          const COLORS = ['hsl(210 90% 60%)', 'hsl(162 72% 46%)'];
-
-          if (total <= 0) {
-            return <p className="text-[10px] text-muted-foreground">Sem dados para o filtro atual.</p>;
-          }
-          return (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={75}
-                      innerRadius={42}
-                      paddingAngle={2}
-                      isAnimationActive={false}
-                    >
-                      {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} stroke="none" />)}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2">
-                  {pieData.map((d, i) => {
-                    const atual = sumBy(refMonth, d.key);
-                    const anterior = sumBy(prevMonth, d.key);
-                    const variacao = anterior > 0 ? ((atual - anterior) / anterior) * 100 : null;
-                    const isUp = variacao !== null && variacao > 0;
-                    const isDown = variacao !== null && variacao < 0;
-                    const trendColor = isUp ? 'text-destructive' : isDown ? 'text-success' : 'text-muted-foreground';
-                    const TrendIcon = isUp ? TrendingUp : isDown ? TrendingDown : Percent;
-                    return (
-                      <div key={d.name} className="rounded-lg border border-border bg-secondary/40 p-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: COLORS[i] }} />
-                            <span className="text-[10px] font-medium">{d.name}</span>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground">{((d.value / total) * 100).toFixed(1)}%</span>
-                        </div>
-                        <div className="flex items-end justify-between gap-2">
-                          <div className="space-y-0.5 min-w-0">
-                            <p className="text-[10px] font-display font-bold truncate">{formatCurrency(d.value)}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">Ant: {formatCurrency(anterior)}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">Atual: {formatCurrency(atual)}</p>
-                          </div>
-                          <div className={`flex items-center gap-1 text-[10px] font-display font-bold shrink-0 ${trendColor}`}>
-                            <TrendIcon className="w-3 h-3" />
-                            <span>{variacao === null ? '—' : `${variacao > 0 ? '+' : ''}${variacao.toFixed(1)}%`}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="flex items-center justify-between rounded-lg border border-border/60 p-2">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Total</span>
-                    <span className="text-[10px] font-display font-bold">{formatCurrency(total)}</span>
-                  </div>
-                  {prevMonth && (
-                    <p className="text-[10px] text-muted-foreground text-right">Comparação: {prevMonth} → {refMonth}</p>
-                  )}
-                  {!prevMonth && (
-                    <p className="text-[10px] text-muted-foreground text-right">Sem mês anterior para comparação.</p>
-                  )}
-                </div>
-              </div>
-            </>
-          );
-        })()}
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }} className="glass-card rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Receita Total por Unidade ADM (regional correspondente)</h3>
-        {receitaPorUnidade.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sem dados para o filtro atual.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {receitaPorUnidade.map((u, i) => (
-              <motion.div
-                key={u.unidade}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.03 * i }}
-                className="rounded-lg border border-border bg-secondary/40 p-3"
-              >
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{u.regional}</p>
-                <p className="text-sm font-medium mt-0.5">{u.unidade}</p>
-                <p className="text-lg font-display font-bold mt-1">{formatCurrency(u.receita)}</p>
-              </motion.div>
-            ))}
-          </div>
-        )}
+        <DonutChart
+          title="Mão de Obra vs Matéria Prima"
+          items={[
+            {
+              name: 'Mão de Obra',
+              value: filtered.reduce((s, r) => s + r.maoDeObra, 0),
+              prevValue: (() => { const monthsAvail = [...new Set(scopeAll.map(r => r.data))].filter(Boolean).sort(); const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1]; const refIdx = monthsAvail.indexOf(refMonth); const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null; return prevMonth ? scopeAll.filter(r => r.data === prevMonth).reduce((s, r) => s + r.maoDeObra, 0) : undefined; })(),
+              color: '#378ADD',
+            },
+            {
+              name: 'Matéria Prima',
+              value: filtered.reduce((s, r) => s + r.materiaPrima, 0),
+              prevValue: (() => { const monthsAvail = [...new Set(scopeAll.map(r => r.data))].filter(Boolean).sort(); const refMonth = selectedMonth !== 'all' ? selectedMonth : monthsAvail[monthsAvail.length - 1]; const refIdx = monthsAvail.indexOf(refMonth); const prevMonth = refIdx > 0 ? monthsAvail[refIdx - 1] : null; return prevMonth ? scopeAll.filter(r => r.data === prevMonth).reduce((s, r) => s + r.materiaPrima, 0) : undefined; })(),
+              color: '#1D9E75',
+            },
+            {
+              name: 'Impostos',
+              value: filtered.reduce((s, r) => s + r.impostos, 0),
+              color: '#EF9F27',
+            },
+          ]}
+        />
       </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-5">
