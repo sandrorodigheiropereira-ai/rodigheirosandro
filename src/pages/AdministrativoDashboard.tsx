@@ -7,7 +7,7 @@ import { filterOnlyAdm, filterOutAdm, ADM_UNITS } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } , Legend from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { DonutChart } from '@/components/DonutChart';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
