@@ -1,4 +1,4 @@
-import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink, LogOut, BellRing, Coffee } from 'lucide-react';
+import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink, LogOut, BellRing, Coffee, Users } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { CompanyLogo } from '@/components/CompanyLogo';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +22,7 @@ const items = [
   { title: 'Unidade', url: '/unidade', icon: Building2 },
   { title: 'Administrativo', url: '/administrativo', icon: Briefcase },
   { title: 'Alertas', url: '/alertas', icon: BellRing },
+  { title: 'Pessoas', url: '/rh', icon: Users },
 ];
 
 const externalItems = [
@@ -41,12 +42,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        <div className="p-4 flex items-center justify-center border-b">
-          {!collapsed ? (
-            <img src="/logo.png" alt="Mais Sabor" className="h-10 w-auto" />
-          ) : (
-            <img src="/logo.png" alt="Mais Sabor" className="h-6 w-auto" />
-          )}
+        <div className={`p-4 ${collapsed ? 'px-2' : ''}`}>
+          <CompanyLogo collapsed={collapsed} />
         </div>
 
         <SidebarGroup>
@@ -56,8 +53,8 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className="flex items-center gap-2 hover:bg-muted/50">
-                      <item.icon className="h-4 w-4" />
+                    <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                      <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -78,12 +75,11 @@ export function AppSidebar() {
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 hover:bg-muted/50"
+                      className="hover:bg-sidebar-accent/50"
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && (
-                        <span className="flex-1 truncate">{item.title}</span>
-                      )}
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                      <ExternalLink className="ml-auto h-3 w-3 opacity-60" />
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -92,18 +88,13 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-3 border-t space-y-2">
+        <div className="mt-auto p-3 space-y-2">
           {!collapsed && user && (
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <div className="text-[10px] text-muted-foreground truncate px-1">{user.email}</div>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-start gap-2"
-            onClick={() => signOut()}
-          >
+          <Button variant="outline" size="sm" onClick={signOut} className="w-full">
             <LogOut className="h-4 w-4" />
-            {!collapsed && <span>Sair</span>}
+            {!collapsed && <span className="ml-2">Sair</span>}
           </Button>
         </div>
       </SidebarContent>
