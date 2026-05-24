@@ -26,9 +26,9 @@ export function exportPdf(records: FinancialRecord[]) {
     formatCurrency(r.receitaBruta),
     formatCurrency(r.despesaTotal),
     formatCurrency(r.cmv),
-    `${r.cmvPercent.toFixed(2)}%`,
-    formatCurrency(r.margem),
-    `${r.margemPercent.toFixed(2)}%`,
+    `${r.receitaBruta > 0 ? ((r.cmv / r.receitaBruta) * 100).toFixed(2) : '0.00'}%`,
+    formatCurrency(r.receitaLiquida - r.despesaTotal),
+    `${r.margem.toFixed(2)}%`,
   ]);
 
   const csvContent = [headers.join(';'), ...rows.map((row) => row.join(';'))].join('\n');
