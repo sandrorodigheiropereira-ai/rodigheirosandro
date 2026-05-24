@@ -42,7 +42,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className="p-4 flex items-center justify-center border-b">
-          <CompanyLogo />
+          {!collapsed ? (
+            <img src="/logo.png" alt="Mais Sabor" className="h-10 w-auto" />
+          ) : (
+            <img src="/logo.png" alt="Mais Sabor" className="h-6 w-auto" />
+          )}
         </div>
 
         <SidebarGroup>
