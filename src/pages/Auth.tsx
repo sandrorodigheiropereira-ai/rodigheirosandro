@@ -53,16 +53,8 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <img src={maisSaborLogo} alt="Mais Sabor" className="mx-auto h-20 w-auto object-contain" />
-          <div className="mx-auto w-24 h-24 flex items-center justify-center overflow-hidden border-0 border-none rounded-none shadow-none bg-transparent">
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo da empresa" className="w-full h-full object-contain" />
-            ) : (
-              <FileSpreadsheet className="lucide lucide-file-spreadsheet w-10 h-10 text-transparent border-0 border-none" />
-            )}
-          </div>
+          <img src="/logo.png" alt="Mais Sabor" className="h-16 w-auto mx-auto" />
           <div>
-            <CardTitle className="text-2xl">FinanceHub</CardTitle>
             <CardDescription>Acesse sua conta para continuar</CardDescription>
           </div>
         </CardHeader>
