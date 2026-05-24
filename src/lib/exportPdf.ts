@@ -274,7 +274,7 @@ export function exportPdf(allData: FinancialRecord[]) {
         ${top5.map((u,i) => unitScoreBar(i+1, u.unidade, u.score, u.metrics.margem, u.metrics.cmvPercent)).join('')}
       </div>
       <div>
-        ${sectionTitle('⚠️ Bottom 5 — Pior Score')}
+        ${sectionTitle('⚠️ Top 5 — Pior Score')}
         ${bottom5.map((u,i) => unitScoreBar(i+1, u.unidade, u.score, u.metrics.margem, u.metrics.cmvPercent)).join('')}
       </div>
     </div>
