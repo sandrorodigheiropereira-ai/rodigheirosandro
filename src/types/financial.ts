@@ -43,3 +43,16 @@ export interface Alert {
 }
 
 export type DashboardView = 'consolidado' | 'regional' | 'unidade';
+
+export interface RhRecord {
+  id: string;
+  data: string;
+  regional: string;
+  unidade: string;
+  maoDeObra: number;
+  encargosSociais: number;
+  percentualMdo: number;
+  metaPercentual: number;
+  numFuncionarios: number;
+  horaExtra: number;
+}
