@@ -4,6 +4,7 @@ import { KpiCard } from '@/components/KpiCard';
 import { FiltersBar } from '@/components/FiltersBar';
 import { calcMetrics, generateAlerts, groupBy, formatCurrency, formatPercent, rankUnidades } from '@/lib/calculations';
 import { useSheetData, getRegionaisFromData, getUnidadesFromData } from '@/hooks/useSheetData';
+import { useRhData } from '@/hooks/useRhData';
 import { filterOutAdm } from '@/lib/constants';
 import { exportPdf } from '@/lib/exportPdf';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList } from 'recharts';
@@ -23,6 +24,8 @@ export default function ConsolidadoDashboard() {
   const navigate = useNavigate();
 
   const { data: sheetData, isLoading, error } = useSheetData();
+  const { data: rhData } = useRhData();
+  const rhRecords = useMemo(() => rhData?.data || [], [rhData]);
   const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
 
   const filtered = useMemo(() => {
