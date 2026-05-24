@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useSheetData, getRegionaisFromData } from '@/hooks/useSheetData';
+import { useRhData } from '@/hooks/useRhData';
 import { calcMetrics, generateAlerts, groupBy, formatCurrency, formatPercent, rankUnidades, calcHealthScores, HealthScore } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
-import { AlertCircle, AlertTriangle, TrendingUp, TrendingDown, ShieldCheck, Sun, Zap } from 'lucide-react';
+import { AlertCircle, AlertTriangle, TrendingUp, TrendingDown, ShieldCheck, Sun, Zap, Users, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 
@@ -111,6 +112,7 @@ function RegionalRankingList({ rankingRegional, lastMonthRecords, formatCurrency
 
 export default function MorningBriefing() {
   const { data: sheetData, isLoading } = useSheetData();
+  const { data: rhData } = useRhData();
   const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
 
@@ -189,6 +191,20 @@ export default function MorningBriefing() {
       return { regional: reg, margem: m.margem, receita: m.receitaBruta, delta, alertCount };
     }).sort((a, b) => b.receita - a.receita);
   }, [regionais, lastMonthRecords, prevMonthRecords, alerts]);
+
+  // RH metrics para o último mês
+  const rhLastMonth = useMemo(() => {
+    const recs = (rhData?.data || []).filter(r => r.data === lastMonth);
+    const totalMdo = recs.reduce((s, r) => s + r.maoDeObra, 0);
+    const totalHe = recs.reduce((s, r) => s + r.horaExtra, 0);
+    const totalFunc = recs.reduce((s, r) => s + r.numFuncionarios, 0);
+    const avgPct = recs.length > 0 ? recs.reduce((s, r) => s + r.percentualMdo, 0) / recs.length : 0;
+    const avgMeta = recs.filter(r => r.metaPercentual > 0);
+    const metaAvg = avgMeta.length > 0 ? avgMeta.reduce((s, r) => s + r.metaPercentual, 0) / avgMeta.length : 0;
+    const acimaMeta = recs.filter(r => r.metaPercentual > 0 && r.percentualMdo > r.metaPercentual).length;
+    const topHe = [...recs].sort((a, b) => b.horaExtra - a.horaExtra).slice(0, 3);
+    return { totalMdo, totalHe, totalFunc, avgPct, metaAvg, acimaMeta, topHe, total: recs.length };
+  }, [rhData, lastMonth]);
 
   const pct = (curr: number, prev?: number) =>
     prev && prev > 0 ? ((curr - prev) / prev) * 100 : undefined;
@@ -467,7 +483,63 @@ export default function MorningBriefing() {
         <RegionalRankingList rankingRegional={rankingRegional} lastMonthRecords={lastMonthRecords} formatCurrency={formatCurrency} formatPercent={formatPercent} />
       </motion.div>
 
-            {/* Rankings */}
+            {/* Resumo de Pessoas */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.34 }}
+        className="glass-card rounded-xl p-5 space-y-4"
+      >
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Pessoas — {lastMonth}
+          </h3>
+          {rhLastMonth.acimaMeta > 0 && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-danger/10 text-danger">
+              {rhLastMonth.acimaMeta} unidade{rhLastMonth.acimaMeta > 1 ? 's' : ''} acima da meta MdO
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Custo MdO', value: formatCurrency(rhLastMonth.totalMdo), color: 'text-foreground' },
+            { label: '% MdO Médio', value: `${rhLastMonth.avgPct.toFixed(1)}%`, color: rhLastMonth.metaAvg > 0 && rhLastMonth.avgPct > rhLastMonth.metaAvg ? 'text-danger' : 'text-success' },
+            { label: 'Funcionários', value: rhLastMonth.totalFunc > 0 ? rhLastMonth.totalFunc.toFixed(0) : '—', color: 'text-foreground' },
+            { label: 'Hora Extra', value: rhLastMonth.totalHe > 0 ? formatCurrency(rhLastMonth.totalHe) : '—', color: rhLastMonth.totalHe > 0 ? 'text-warning' : 'text-muted-foreground' },
+          ].map(kpi => (
+            <div key={kpi.label} className="bg-secondary/40 rounded-lg p-3 text-center">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">{kpi.label}</p>
+              <p className={`text-base font-display font-bold ${kpi.color}`}>{kpi.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {rhLastMonth.topHe.length > 0 && rhLastMonth.topHe[0].horaExtra > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <Clock className="w-3 h-3" /> Top hora extra
+            </p>
+            {rhLastMonth.topHe.map((u, i) => (
+              <div key={u.unidade} className="flex items-center gap-3">
+                <span className="text-[10px] font-bold text-muted-foreground w-4">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs font-medium truncate">{u.unidade}</span>
+                    <span className="text-xs font-semibold text-warning shrink-0">{formatCurrency(u.horaExtra)}</span>
+                  </div>
+                  <div className="w-full h-1 rounded-full bg-secondary">
+                    <div className="h-1 rounded-full bg-warning" style={{ width: `${(u.horaExtra / rhLastMonth.topHe[0].horaExtra) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Rankings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <motion.div
