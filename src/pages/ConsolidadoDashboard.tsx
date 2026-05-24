@@ -142,7 +142,7 @@ export default function ConsolidadoDashboard() {
             onUnidadeChange={(v) => setUnidade(Array.isArray(v) ? v : v === 'all' ? [] : [v])}
             records={allRecords} multiSelectUnidade multiSelectPeriodo
           />
-          <Button onClick={() => exportPdf(allRecords, rhRecords)} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+          <Button onClick={() => exportPdf(allRecords)} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
             <FileDown className="w-4 h-4" />
             Exportar PDF
           </Button>
