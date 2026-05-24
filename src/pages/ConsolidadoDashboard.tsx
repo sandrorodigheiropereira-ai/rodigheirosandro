@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { DollarSign, TrendingUp, Percent, BarChart3 } from 'lucide-react';
+import { DollarSign, TrendingUp, Percent, BarChart3, FileDown } from 'lucide-react';
 import { KpiCard } from '@/components/KpiCard';
 import { FiltersBar } from '@/components/FiltersBar';
 import { AlertsPanel } from '@/components/AlertsPanel';
@@ -11,6 +11,8 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { exportPdf } from '@/lib/exportPdf';
+import { Button } from '@/components/ui/button';
 
 type CompareMode = 'previous-month' | 'previous-window';
 
@@ -117,9 +119,15 @@ export default function ConsolidadoDashboard() {
           <h1 className="text-2xl font-display font-bold">Dashboard Consolidado</h1>
           <p className="text-sm text-muted-foreground">Visão geral de todas as regionais • Dados do Google Sheets</p>
         </div>
-        <FiltersBar periodo={periodo} regional={regional} unidade={unidade}
-          onPeriodoChange={(v) => setPeriodo(Array.isArray(v) ? v : v === 'all' ? [] : [v])} onRegionalChange={(v) => { setRegional(v); setUnidade([]); }} onUnidadeChange={(v) => setUnidade(Array.isArray(v) ? v : v === 'all' ? [] : [v])}
-          records={allRecords} multiSelectUnidade multiSelectPeriodo />
+        <div className="flex items-center gap-3 flex-wrap">
+          <FiltersBar periodo={periodo} regional={regional} unidade={unidade}
+            onPeriodoChange={(v) => setPeriodo(Array.isArray(v) ? v : v === 'all' ? [] : [v])} onRegionalChange={(v) => { setRegional(v); setUnidade([]); }} onUnidadeChange={(v) => setUnidade(Array.isArray(v) ? v : v === 'all' ? [] : [v])}
+            records={allRecords} multiSelectUnidade multiSelectPeriodo />
+          <Button onClick={() => exportPdf(filtered)} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+            <FileDown className="w-4 h-4" />
+            Exportar PDF
+          </Button>
+        </div>
       </div>
 
       {selectedMonths.length > 1 && (
