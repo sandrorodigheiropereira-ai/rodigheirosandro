@@ -1,4 +1,4 @@
-import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink, LogOut, BellRing, Coffee, Users } from 'lucide-react';
+import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink, LogOut, BellRing, Coffee, Users, Shield } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useSheetData } from '@/hooks/useSheetData';
 import { generateAlerts, groupBy } from '@/lib/calculations';
@@ -27,6 +27,7 @@ const items = [
   { title: 'Administrativo', url: '/administrativo', icon: Briefcase },
   { title: 'Alertas', url: '/alertas', icon: BellRing },
   { title: 'Pessoas', url: '/rh', icon: Users },
+  { title: 'Admin', url: '/admin', icon: Shield },
 ];
 
 const externalItems = [
