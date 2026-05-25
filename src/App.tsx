@@ -13,6 +13,7 @@ import AdministrativoDashboard from "./pages/AdministrativoDashboard";
 import AlertasDashboard from "./pages/AlertasDashboard";
 import MorningBriefing from "./pages/MorningBriefing";
 import RhDashboard from "./pages/RhDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -40,6 +41,7 @@ const App = () => (
                       <Route path="/alertas" element={<AlertasDashboard />} />
                       <Route path="/briefing" element={<MorningBriefing />} />
                       <Route path="/rh" element={<RhDashboard />} />
+                      <Route path="/admin" element={<AdminDashboard />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
