@@ -1,5 +1,9 @@
 import { LayoutDashboard, Map, Building2, FileSpreadsheet, Briefcase, ExternalLink, LogOut, BellRing, Coffee, Users } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { useSheetData } from '@/hooks/useSheetData';
+import { generateAlerts, groupBy } from '@/lib/calculations';
+import { filterOutAdm } from '@/lib/constants';
+import { useMemo } from 'react';
 import { CompanyLogo } from '@/components/CompanyLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -34,8 +38,21 @@ const externalItems = [
   { title: 'Vialex', url: 'https://vialexpro.base44.app/dashboard', icon: ExternalLink },
 ];
 
+function useDangerAlertCount() {
+  const { data: sheetData } = useSheetData();
+  return useMemo(() => {
+    const records = filterOutAdm(sheetData?.data || []);
+    const months = [...new Set(records.map(r => r.data))].filter(Boolean).sort();
+    const lastMonth = months[months.length - 1];
+    if (!lastMonth) return 0;
+    const lastRecs = records.filter(r => r.data === lastMonth);
+    return generateAlerts(lastRecs).filter(a => a.type === 'danger').length;
+  }, [sheetData]);
+}
+
 export function AppSidebar() {
   const { state } = useSidebar();
+  const dangerCount = useDangerAlertCount();
   const collapsed = state === 'collapsed';
   const { user, signOut } = useAuth();
 
@@ -54,8 +71,20 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
+                      <div className="relative mr-2 shrink-0">
+                        <item.icon className="h-4 w-4" />
+                        {item.title === 'Alertas' && dangerCount > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded-full bg-danger text-white text-[9px] font-bold leading-none">
+                            {dangerCount > 99 ? '99+' : dangerCount}
+                          </span>
+                        )}
+                      </div>
                       {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && item.title === 'Alertas' && dangerCount > 0 && (
+                        <span className="ml-auto flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-danger/10 text-danger text-[9px] font-bold">
+                          {dangerCount > 99 ? '99+' : dangerCount}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
