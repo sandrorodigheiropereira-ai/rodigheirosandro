@@ -487,19 +487,12 @@ export default function ConsolidadoDashboard() {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Mapa de Calor — Margem por Unidade
           </h3>
-          <div className="flex items-center gap-3 text-[10px] font-semibold">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-sm bg-danger/80 inline-block" /> Negativa
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-sm bg-warning/80 inline-block" /> 0–10%
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-sm bg-success/60 inline-block" /> 10–20%
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-sm bg-success inline-block" /> &gt;20%
-            </span>
+                    <div className="flex items-center gap-3 text-[10px] font-semibold flex-wrap">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-success inline-block" /> ≥ Meta</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-success/50 inline-block" /> 80-100% da meta</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-warning/70 inline-block" /> 50-80% da meta</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-danger/50 inline-block" /> &lt;50% da meta</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-danger/80 inline-block" /> Negativa</span>
           </div>
         </div>
 
@@ -512,8 +505,16 @@ export default function ConsolidadoDashboard() {
                 const byUnidade = groupBy(recs, 'unidade');
                 const unidades = Object.entries(byUnidade).map(([unidade, urecs]) => {
                   const m = calcMetrics(urecs);
-                  return { unidade, margem: m.margem, receita: m.receitaBruta, cmv: m.cmvPercent };
-                }).sort((a, b) => b.margem - a.margem);
+                  const meta = m.meta;
+                  // Performance vs meta: quanto da meta está atingindo
+                  const perfPct = meta > 0 ? (m.margem / meta) * 100 : null;
+                  return { unidade, margem: m.margem, meta, perfPct, receita: m.receitaBruta, cmv: m.cmvPercent };
+                }).sort((a, b) => {
+                  // Ordenar: quem está mais longe da meta primeiro
+                  const pa = a.perfPct ?? (a.margem < 0 ? -999 : 0);
+                  const pb = b.perfPct ?? (b.margem < 0 ? -999 : 0);
+                  return pb - pa;
+                });
 
                 return (
                   <div key={reg}>
@@ -522,15 +523,25 @@ export default function ConsolidadoDashboard() {
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {unidades.map(u => {
+                        // Cor baseada em performance vs meta
                         const bg =
-                          u.margem < 0 ? 'bg-danger/80 hover:bg-danger' :
-                          u.margem < 5 ? 'bg-danger/40 hover:bg-danger/60' :
-                          u.margem < 10 ? 'bg-warning/70 hover:bg-warning/90' :
-                          u.margem < 20 ? 'bg-success/50 hover:bg-success/70' :
-                          'bg-success hover:bg-success/80';
+                          u.perfPct === null
+                            ? u.margem < 0
+                              ? 'bg-danger/80 hover:bg-danger'
+                              : u.margem < 5
+                              ? 'bg-warning/70 hover:bg-warning/90'
+                              : 'bg-success/50 hover:bg-success/70'
+                            : u.perfPct >= 100
+                            ? 'bg-success hover:bg-success/80'           // atingiu a meta
+                            : u.perfPct >= 80
+                            ? 'bg-success/50 hover:bg-success/70'        // entre 80-100% da meta
+                            : u.perfPct >= 50
+                            ? 'bg-warning/70 hover:bg-warning/90'        // entre 50-80% da meta
+                            : u.margem < 0
+                            ? 'bg-danger/80 hover:bg-danger'             // margem negativa
+                            : 'bg-danger/50 hover:bg-danger/70';         // abaixo de 50% da meta
 
-                        const textColor =
-                          u.margem < 10 ? 'text-white' : 'text-white';
+                        const textColor = 'text-white';
 
                         return (
                           <div
@@ -549,6 +560,8 @@ CMV: ${u.cmv.toFixed(1)}%`}
                                 <p className="text-[10px] font-semibold">{u.unidade}</p>
                                 <p className="text-[9px] text-muted-foreground">Receita: {formatCurrency(u.receita)}</p>
                                 <p className="text-[9px] text-muted-foreground">CMV: {u.cmv.toFixed(1)}%</p>
+                                {u.meta > 0 && <p className="text-[9px] text-muted-foreground">Meta: {u.meta.toFixed(1)}%</p>}
+                                {u.perfPct !== null && <p className={`text-[9px] font-semibold ${u.perfPct >= 100 ? 'text-success' : u.perfPct >= 80 ? 'text-warning' : 'text-danger'}`}>{u.perfPct.toFixed(0)}% da meta</p>}
                               </div>
                               <div className="w-2 h-2 bg-background border-r border-b border-border rotate-45 -mt-1" />
                             </div>
