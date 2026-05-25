@@ -6,7 +6,7 @@ import {
   formatPercent,
   calcHealthScores,
 } from "@/lib/calculations";
-import { filterOutAdm } from "@/lib/constants";
+import { filterOutAdm, filterOnlyAdm } from "@/lib/constants";
 import { FinancialRecord, RhRecord } from "@/types/financial";
 
 function getRegionais(records: FinancialRecord[]): string[] {
@@ -142,6 +142,98 @@ function unitScoreBar(pos: number, unidade: string, score: number, margem: numbe
           <div style="width:${score}%;background:${color};height:6px;border-radius:99px"></div>
         </div>
       </div>
+    </div>`;
+}
+
+function admSection(allData: FinancialRecord[], lastMonth: string): string {
+  const admRecs = filterOnlyAdm(allData).filter((r) => r.data === lastMonth);
+  const opRecs = filterOutAdm(allData).filter((r) => r.data === lastMonth);
+  if (admRecs.length === 0) return "";
+
+  const ADM_TO_REGIONAL: Record<string, string> = {
+    "ADM/ES": "ESPIRITO SANTO",
+    "ADM/TO": "TOCANTINS",
+    "ADM/GO": "GOIAS",
+    "ADM/PR": "PARANA",
+  };
+  const THRESHOLD = 4;
+
+  const totalDespAdm = admRecs.reduce((s, r) => s + r.despesaTotal, 0);
+  const totalRecOp = opRecs.reduce((s, r) => s + r.receitaBruta, 0);
+  const pctGlobal = totalRecOp > 0 ? (totalDespAdm / totalRecOp) * 100 : 0;
+  const pctColor = pctGlobal > THRESHOLD ? "#E24B4A" : pctGlobal > THRESHOLD * 0.8 ? "#EF9F27" : "#1D9E75";
+
+  // By unit ADM
+  const byUnit: Record<string, FinancialRecord[]> = {};
+  for (const r of admRecs) {
+    if (!byUnit[r.unidade]) byUnit[r.unidade] = [];
+    byUnit[r.unidade].push(r);
+  }
+
+  const units = Object.entries(byUnit)
+    .map(([unidade, recs]) => {
+      const regional = ADM_TO_REGIONAL[unidade] || unidade;
+      const despesa = recs.reduce((s, r) => s + r.despesaTotal, 0);
+      const opRecsReg = opRecs.filter((r) => r.regional === regional);
+      const receita = opRecsReg.reduce((s, r) => s + r.receitaBruta, 0);
+      const pct = receita > 0 ? (despesa / receita) * 100 : 0;
+      const grade = pct > THRESHOLD ? "danger" : pct > THRESHOLD * 0.8 ? "warning" : "ok";
+      const color = grade === "danger" ? "#E24B4A" : grade === "warning" ? "#EF9F27" : "#1D9E75";
+      return { unidade, regional, despesa, receita, pct, color, grade };
+    })
+    .sort((a, b) => b.pct - a.pct);
+
+  const maxPct = Math.max(...units.map((u) => u.pct), THRESHOLD * 1.5);
+
+  const unitRows = units
+    .map(
+      (u, i) => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <div>
+          <span style="font-size:12px;font-weight:700;color:#374151">${u.unidade}</span>
+          <span style="font-size:10px;color:#9CA3AF;margin-left:8px">${u.regional}</span>
+        </div>
+        <div style="text-align:right">
+          <span style="font-size:14px;font-weight:800;color:${u.color}">${formatPercent(u.pct)}</span>
+          <span style="font-size:10px;color:#9CA3AF;margin-left:8px">${formatCurrency(u.despesa)}</span>
+        </div>
+      </div>
+      <div style="position:relative;width:100%;background:#F3F4F6;border-radius:99px;height:10px">
+        <div style="width:${Math.min(100, (u.pct / maxPct) * 100)}%;background:${u.color};height:10px;border-radius:99px"></div>
+        <div style="position:absolute;top:-1px;left:${Math.min(98, (THRESHOLD / maxPct) * 100)}%;width:2px;height:12px;background:#E24B4A;border-radius:1px"></div>
+      </div>
+      <div style="font-size:9px;color:#9CA3AF;margin-top:3px">Receita regional: ${formatCurrency(u.receita)}</div>
+    </div>`,
+    )
+    .join("");
+
+  return `
+    <div style="page-break-before:always;padding-top:8px">
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:20px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Custo Administrativo</div>
+          <div style="font-size:22px;font-weight:800;color:#FFFFFF">Despesa ADM vs Receita Regional</div>
+          <div style="font-size:12px;color:#9CA3AF">Referência: ${lastMonth} · Limite: ${THRESHOLD}%</div>
+        </div>
+        <div style="text-align:center;background:${pctColor}22;border-radius:12px;padding:12px 24px;border:2px solid ${pctColor}">
+          <div style="font-size:28px;font-weight:800;color:${pctColor}">${formatPercent(pctGlobal)}</div>
+          <div style="font-size:9px;font-weight:700;color:${pctColor};text-transform:uppercase;margin-top:2px">% ADM / Receita</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+        ${kpiCard("Despesa ADM Total", formatCurrency(totalDespAdm), undefined, "#E24B4A")}
+        ${kpiCard("Receita das Regionais", formatCurrency(totalRecOp))}
+        ${kpiCard("% ADM / Receita", formatPercent(pctGlobal), `Limite: ${THRESHOLD}%`, pctColor)}
+        ${kpiCard("Unidades ADM", String(units.length))}
+      </div>
+
+      ${sectionTitle("% ADM / Receita por Unidade")}
+      <div style="margin-bottom:8px;font-size:10px;color:#9CA3AF">
+        Linha vermelha = limite de ${THRESHOLD}% · Quanto menor, melhor
+      </div>
+      <div style="padding:4px 0">${unitRows}</div>
     </div>`;
 }
 
@@ -445,6 +537,9 @@ export function exportPdf(allData: FinancialRecord[], rhRecords: RhRecord[] = []
     </div>`
       : ""
   }
+
+  <!-- Seção Administrativa -->
+  ${admSection(allData, lastMonth)}
 
   <!-- Seção de Pessoas -->
   ${rhSection(rhRecords, lastMonth)}
