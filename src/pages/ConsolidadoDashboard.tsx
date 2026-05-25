@@ -476,6 +476,93 @@ export default function ConsolidadoDashboard() {
         </div>
       </motion.div>
 
+      {/* Mapa de Calor por Unidade */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="glass-card rounded-xl p-5 space-y-4"
+      >
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            Mapa de Calor — Margem por Unidade
+          </h3>
+          <div className="flex items-center gap-3 text-[10px] font-semibold">
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-sm bg-danger/80 inline-block" /> Negativa
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-sm bg-warning/80 inline-block" /> 0–10%
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-sm bg-success/60 inline-block" /> 10–20%
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-sm bg-success inline-block" /> &gt;20%
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {(() => {
+            const byRegional = groupBy(filtered, 'regional');
+            return Object.entries(byRegional)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([reg, recs]) => {
+                const byUnidade = groupBy(recs, 'unidade');
+                const unidades = Object.entries(byUnidade).map(([unidade, urecs]) => {
+                  const m = calcMetrics(urecs);
+                  return { unidade, margem: m.margem, receita: m.receitaBruta, cmv: m.cmvPercent };
+                }).sort((a, b) => b.margem - a.margem);
+
+                return (
+                  <div key={reg}>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      {reg}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {unidades.map(u => {
+                        const bg =
+                          u.margem < 0 ? 'bg-danger/80 hover:bg-danger' :
+                          u.margem < 5 ? 'bg-danger/40 hover:bg-danger/60' :
+                          u.margem < 10 ? 'bg-warning/70 hover:bg-warning/90' :
+                          u.margem < 20 ? 'bg-success/50 hover:bg-success/70' :
+                          'bg-success hover:bg-success/80';
+
+                        const textColor =
+                          u.margem < 10 ? 'text-white' : 'text-white';
+
+                        return (
+                          <div
+                            key={u.unidade}
+                            title={`${u.unidade}
+Margem: ${u.margem.toFixed(1)}%
+Receita: ${formatCurrency(u.receita)}
+CMV: ${u.cmv.toFixed(1)}%`}
+                            className={`${bg} ${textColor} rounded-lg p-2.5 min-w-[72px] text-center cursor-default transition-all duration-150 group relative`}
+                          >
+                            <p className="text-[10px] font-bold leading-none mb-1">{u.unidade}</p>
+                            <p className="text-sm font-display font-black leading-none">{u.margem.toFixed(1)}%</p>
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
+                              <div className="bg-background border border-border rounded-lg p-2 shadow-lg text-left whitespace-nowrap">
+                                <p className="text-[10px] font-semibold">{u.unidade}</p>
+                                <p className="text-[9px] text-muted-foreground">Receita: {formatCurrency(u.receita)}</p>
+                                <p className="text-[9px] text-muted-foreground">CMV: {u.cmv.toFixed(1)}%</p>
+                              </div>
+                              <div className="w-2 h-2 bg-background border-r border-b border-border rotate-45 -mt-1" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              });
+          })()}
+        </div>
+      </motion.div>
+
     </div>
   );
 }
