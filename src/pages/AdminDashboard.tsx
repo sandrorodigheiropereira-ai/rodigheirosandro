@@ -215,7 +215,7 @@ export default function AdminDashboard() {
   const updateManager = async (id: string, field: string, value: string) => {
     const { error } = await supabase
       .from("regional_managers")
-      .update({ [field]: value })
+      .update({ [field]: value } as never)
       .eq("id", id);
     if (error) {
       showToast("Erro ao salvar", "error");
