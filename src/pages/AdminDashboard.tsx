@@ -61,14 +61,23 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-  // Force session refresh to get latest metadata
+  // Check admin — email whitelist + metadata
   useEffect(() => {
-    supabase.auth.refreshSession().then(({ data }) => {
-      const role = data?.session?.user?.user_metadata?.role;
-      // Also check app_metadata as fallback
-      const appRole = data?.session?.user?.app_metadata?.role;
-      setIsAdmin(role === "admin" || appRole === "admin");
-    });
+    const checkAdmin = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setIsAdmin(false);
+        return;
+      }
+      const role = session.user?.user_metadata?.role;
+      const appRole = session.user?.app_metadata?.role;
+      const email = session.user?.email ?? "";
+      const adminEmails = ["sandro@maissabor.ind.br", "sandro.rodigheiro.pereira@gmail.com"];
+      setIsAdmin(role === "admin" || appRole === "admin" || adminEmails.includes(email));
+    };
+    checkAdmin();
   }, []);
 
   // State
@@ -206,7 +215,7 @@ export default function AdminDashboard() {
   const updateManager = async (id: string, field: string, value: string) => {
     const { error } = await supabase
       .from("regional_managers")
-      .update({ [field]: value } as never)
+      .update({ [field]: value })
       .eq("id", id);
     if (error) {
       showToast("Erro ao salvar", "error");
