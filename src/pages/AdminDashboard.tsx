@@ -15,7 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +57,6 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
 }
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("usuarios");
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
