@@ -122,16 +122,6 @@ export default function AdminDashboard() {
     loadData();
   }, [loadData]);
 
-  const saveConfig = async (key: string, value: string) => {
-    const { error } = await supabase.from("system_config").upsert({ key, value, updated_at: new Date().toISOString() });
-    if (error) {
-      showToast("Erro ao salvar configuração", "error");
-      return;
-    }
-    setConfig((prev) => ({ ...prev, [key]: value }));
-    showToast("Configuração salva!");
-  };
-
   const saveAllLimits = async () => {
     const keys = ["cmv_danger", "cmv_warning", "mdo_danger", "mdo_warning", "adm_limit"];
     for (const key of keys) {
