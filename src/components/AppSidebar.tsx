@@ -4,7 +4,6 @@ import { useSheetData } from '@/hooks/useSheetData';
 import { generateAlerts, groupBy } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
 import { useMemo } from 'react';
-import { CompanyLogo } from '@/components/CompanyLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,13 +20,13 @@ import {
 
 const items = [
   { title: 'Briefing', url: '/briefing', icon: Coffee },
-  { title: 'Consolidado', url: '/', icon: LayoutDashboard },
-  { title: 'Regional', url: '/regional', icon: Map },
-  { title: 'Unidade', url: '/unidade', icon: Building2 },
+  { title: 'Admin', url: '/admin', icon: Shield },
   { title: 'Administrativo', url: '/administrativo', icon: Briefcase },
   { title: 'Alertas', url: '/alertas', icon: BellRing },
+  { title: 'Consolidado', url: '/', icon: LayoutDashboard },
   { title: 'Pessoas', url: '/rh', icon: Users },
-  { title: 'Admin', url: '/admin', icon: Shield },
+  { title: 'Regional', url: '/regional', icon: Map },
+  { title: 'Unidade', url: '/unidade', icon: Building2 },
 ];
 
 const externalItems = [
@@ -60,8 +59,19 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        <div className={`p-4 ${collapsed ? 'px-2' : ''}`}>
-          <CompanyLogo collapsed={collapsed} />
+        {/* Logo + branding */}
+        <div className={`flex items-center gap-3 p-4 border-b border-sidebar-border/30 ${collapsed ? 'justify-center px-2' : ''}`}>
+          {collapsed ? (
+            <img src="/logo.png" alt="Mais Sabor" className="h-8 w-auto object-contain" />
+          ) : (
+            <>
+              <img src="/logo.png" alt="Mais Sabor" className="h-10 w-auto object-contain shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-sidebar-foreground leading-tight truncate">FinanceHub</p>
+                <p className="text-[10px] text-sidebar-foreground/60 leading-tight truncate">Gestão Financeira</p>
+              </div>
+            </>
+          )}
         </div>
 
         <SidebarGroup>
