@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# FinanceHub — Mais Sabor
 
-TODO: Document your project here
+Plataforma interna de gestão e análise financeira da Mais Sabor.
