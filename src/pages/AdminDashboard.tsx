@@ -376,7 +376,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((u, i) => (
+                      {users.map((u) => (
                         <tr key={u.id} className="border-t border-border/50 hover:bg-secondary/30">
                           <td className="p-3 font-medium">{u.email}</td>
                           <td className="p-3">
