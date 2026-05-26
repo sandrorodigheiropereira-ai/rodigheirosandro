@@ -398,6 +398,276 @@ function regionalSection(regional: string, records: FinancialRecord[], lastMonth
     </div>`;
 }
 
+// ─── Seção 1: Evolução dos últimos 12 meses ───────────────────────────────
+function evolucaoAnualSection(records: FinancialRecord[], lastMonth: string): string {
+  const months = [...new Set(records.map((r) => r.data))].filter(Boolean).sort();
+  const ultimos12 = months.slice(-12);
+  if (ultimos12.length < 2) return "";
+
+  const byMonth = groupBy(records, "data");
+  const data = ultimos12.map((mes) => {
+    const recs = byMonth[mes] || [];
+    const m = calcMetrics(recs);
+    return { mes, receita: m.receitaBruta, despesa: m.despesaTotal, margem: m.margem };
+  });
+
+  const maxVal = Math.max(...data.map((d) => Math.max(d.receita, d.despesa))) * 1.05 || 1;
+  const maxMargem = Math.max(...data.map((d) => Math.abs(d.margem))) * 1.2 || 10;
+
+  const barWidth = Math.floor(520 / data.length) - 4;
+
+  const bars = data
+    .map((d, i) => {
+      const recH = Math.round((d.receita / maxVal) * 120);
+      const desH = Math.round((d.despesa / maxVal) * 120);
+      const mColor = d.margem < 0 ? "#E24B4A" : d.margem < 5 ? "#EF9F27" : "#1D9E75";
+      const isLast = d.mes === lastMonth;
+      return `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+        <div style="font-size:8px;font-weight:700;color:${mColor}">${d.margem.toFixed(1)}%</div>
+        <div style="display:flex;align-items:flex-end;gap:1px;height:120px">
+          <div style="width:${Math.max(barWidth / 2 - 1, 4)}px;height:${recH}px;background:${isLast ? "#1D9E75" : "#86EFAC"};border-radius:2px 2px 0 0"></div>
+          <div style="width:${Math.max(barWidth / 2 - 1, 4)}px;height:${desH}px;background:${isLast ? "#E24B4A" : "#FCA5A5"};border-radius:2px 2px 0 0"></div>
+        </div>
+        <div style="font-size:7px;color:#6B7280;text-align:center;width:${barWidth + 2}px;overflow:hidden;white-space:nowrap">${d.mes}</div>
+      </div>`;
+    })
+    .join("");
+
+  const totalReceita = data.reduce((s, d) => s + d.receita, 0);
+  const totalDespesa = data.reduce((s, d) => s + d.despesa, 0);
+  const margemMedia = data.reduce((s, d) => s + d.margem, 0) / data.length;
+  const melhorMes = [...data].sort((a, b) => b.margem - a.margem)[0];
+  const piorMes = [...data].sort((a, b) => a.margem - b.margem)[0];
+
+  return `
+    <div style="page-break-before:always;padding-top:8px">
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:20px 28px;margin-bottom:20px">
+        <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Análise Temporal</div>
+        <div style="font-size:22px;font-weight:800;color:#FFFFFF">Evolução — Últimos ${data.length} Meses</div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+        ${kpiCard("Receita Acumulada", formatCurrency(totalReceita))}
+        ${kpiCard("Despesa Acumulada", formatCurrency(totalDespesa))}
+        ${kpiCard("Margem Média", formatPercent(margemMedia), undefined, margemMedia < 0 ? "#E24B4A" : margemMedia < 5 ? "#EF9F27" : "#1D9E75")}
+        ${kpiCard("Melhor Mês", melhorMes.mes, `Margem: ${formatPercent(melhorMes.margem)}`, "#1D9E75")}
+        ${kpiCard("Pior Mês", piorMes.mes, `Margem: ${formatPercent(piorMes.margem)}`, "#E24B4A")}
+      </div>
+
+      ${sectionTitle("Receita (verde) vs Despesa (vermelho) por Mês")}
+      <div style="display:flex;align-items:flex-end;gap:2px;padding:0 8px;margin-bottom:24px">
+        ${bars}
+      </div>
+      <div style="display:flex;gap:16px;justify-content:center;font-size:10px;color:#6B7280;margin-bottom:8px">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:8px;background:#1D9E75;border-radius:2px;display:inline-block"></span>Receita</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:8px;background:#E24B4A;border-radius:2px;display:inline-block"></span>Despesa</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:8px;background:#86EFAC;border-radius:2px;display:inline-block"></span>Receita (meses anteriores)</span>
+      </div>
+    </div>`;
+}
+
+// ─── Seção 2: Comparativo mês atual vs mesmo mês ano anterior ───────────────
+function comparativoAnualSection(records: FinancialRecord[], lastMonth: string): string {
+  if (!lastMonth || lastMonth === "—") return "";
+  const [mm, yyyy] = lastMonth.split("/").map(Number);
+  if (!mm || !yyyy) return "";
+  const sameMonthLastYear = `${String(mm).padStart(2, "0")}/${yyyy - 1}`;
+
+  const currRecs = records.filter((r) => r.data === lastMonth);
+  const prevRecs = records.filter((r) => r.data === sameMonthLastYear);
+  if (currRecs.length === 0) return "";
+
+  const curr = calcMetrics(currRecs);
+  const prev = prevRecs.length > 0 ? calcMetrics(prevRecs) : null;
+
+  const delta = (cur: number, pre: number | null | undefined) => {
+    if (!pre || pre === 0) return null;
+    return ((cur - pre) / Math.abs(pre)) * 100;
+  };
+
+  const arrowHtml = (d: number | null, invert = false) => {
+    if (d === null) return '<span style="color:#9CA3AF;font-size:10px">N/D</span>';
+    const positive = invert ? d < 0 : d > 0;
+    const color = positive ? "#1D9E75" : "#E24B4A";
+    const arrow = d > 0 ? "▲" : "▼";
+    return `<span style="color:${color};font-size:11px;font-weight:700">${arrow} ${Math.abs(d).toFixed(1)}%</span>`;
+  };
+
+  const regionais = getRegionais(currRecs);
+  const byRegional = groupBy(currRecs, "regional");
+  const byRegionalPrev = groupBy(prevRecs, "regional");
+
+  const regionalRows = regionais
+    .map((reg) => {
+      const cm = calcMetrics(byRegional[reg] || []);
+      const pm = byRegionalPrev[reg] ? calcMetrics(byRegionalPrev[reg]) : null;
+      const mColor = cm.margem < 0 ? "#E24B4A" : cm.margem < 5 ? "#EF9F27" : "#1D9E75";
+      return `
+      <tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:12px;font-weight:600;color:#374151">${reg}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:12px;text-align:right">${formatCurrency(cm.receitaBruta)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:11px;text-align:right">${pm ? formatCurrency(pm.receitaBruta) : "—"}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;text-align:center">${arrowHtml(delta(cm.receitaBruta, pm?.receitaBruta))}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:12px;text-align:right;color:${mColor};font-weight:700">${formatPercent(cm.margem)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:11px;text-align:right">${pm ? formatPercent(pm.margem) : "—"}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;text-align:center">${arrowHtml(cm.margem - (pm?.margem ?? cm.margem), false)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return `
+    <div style="page-break-before:always;padding-top:8px">
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:20px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Comparativo Anual</div>
+          <div style="font-size:22px;font-weight:800;color:#FFFFFF">${lastMonth} vs ${sameMonthLastYear}</div>
+        </div>
+        ${
+          prev
+            ? `<div style="text-align:center;background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 20px">
+          <div style="font-size:11px;color:#9CA3AF;margin-bottom:2px">Crescimento receita</div>
+          <div style="font-size:22px;font-weight:800;color:${(delta(curr.receitaBruta, prev.receitaBruta) ?? 0) >= 0 ? "#1D9E75" : "#E24B4A"}">${arrowHtml(delta(curr.receitaBruta, prev.receitaBruta))}</div>
+        </div>`
+            : ""
+        }
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+        ${kpiCard(`Receita ${lastMonth}`, formatCurrency(curr.receitaBruta))}
+        ${prev ? kpiCard(`Receita ${sameMonthLastYear}`, formatCurrency(prev.receitaBruta), undefined, "#6B7280") : ""}
+        ${kpiCard(`Margem ${lastMonth}`, formatPercent(curr.margem), undefined, curr.margem < 0 ? "#E24B4A" : "#1D9E75")}
+        ${prev ? kpiCard(`Margem ${sameMonthLastYear}`, formatPercent(prev.margem), undefined, "#6B7280") : ""}
+      </div>
+
+      ${sectionTitle("Comparativo por Regional")}
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#F9FAFB">
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Regional</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Receita ${lastMonth}</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Receita ${sameMonthLastYear}</th>
+            <th style="padding:10px 12px;text-align:center;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Var.</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Margem ${lastMonth}</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Margem ${sameMonthLastYear}</th>
+            <th style="padding:10px 12px;text-align:center;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Var.</th>
+          </tr>
+        </thead>
+        <tbody>${regionalRows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ─── Seção 3: Metas com % de atingimento ────────────────────────────────────
+function metasSection(records: FinancialRecord[], lastMonth: string): string {
+  const recs = records.filter((r) => r.data === lastMonth);
+  if (recs.length === 0) return "";
+
+  const byUnidade = groupBy(recs, "unidade");
+  const unidades = Object.entries(byUnidade)
+    .map(([unidade, urecs]) => {
+      const m = calcMetrics(urecs);
+      const meta = m.meta;
+      const atingimento = meta > 0 ? (m.margem / meta) * 100 : null;
+      const grade =
+        atingimento === null ? "neutral" : atingimento >= 100 ? "success" : atingimento >= 80 ? "warning" : "danger";
+      return {
+        unidade,
+        regional: urecs[0]?.regional ?? "",
+        margem: m.margem,
+        meta,
+        atingimento,
+        grade,
+        receita: m.receitaBruta,
+      };
+    })
+    .filter((u) => u.meta > 0)
+    .sort((a, b) => (b.atingimento ?? 0) - (a.atingimento ?? 0));
+
+  const semMeta = Object.entries(byUnidade)
+    .filter(([_, urecs]) => calcMetrics(urecs).meta <= 0)
+    .map(([unidade]) => unidade);
+
+  const atingiram = unidades.filter((u) => (u.atingimento ?? 0) >= 100).length;
+  const naoAtingiram = unidades.filter((u) => (u.atingimento ?? 0) < 100).length;
+
+  const gradeColor = (g: string) =>
+    g === "success" ? "#1D9E75" : g === "warning" ? "#EF9F27" : g === "danger" ? "#E24B4A" : "#9CA3AF";
+  const gradeBg = (g: string) =>
+    g === "success" ? "#EAF3DE" : g === "warning" ? "#FAEEDA" : g === "danger" ? "#FCEBEB" : "#F9FAFB";
+
+  const rows = unidades
+    .map((u) => {
+      const color = gradeColor(u.grade);
+      const bg = gradeBg(u.grade);
+      const barW = Math.min(100, Math.max(0, u.atingimento ?? 0));
+      return `
+      <tr style="background:${bg}">
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:12px;font-weight:600">${u.unidade}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:11px;color:#6B7280">${u.regional}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:12px;text-align:right;color:${u.margem < 0 ? "#E24B4A" : "#374151"};font-weight:700">${formatPercent(u.margem)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;font-size:12px;text-align:right;color:#6B7280">${formatPercent(u.meta)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;background:#E5E7EB;border-radius:99px;height:6px">
+              <div style="width:${barW}%;background:${color};height:6px;border-radius:99px"></div>
+            </div>
+            <span style="font-size:11px;font-weight:800;color:${color};width:40px;text-align:right">${u.atingimento?.toFixed(0)}%</span>
+          </div>
+        </td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F0F0F0;text-align:center">
+          <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;background:${color}20;color:${color}">
+            ${u.grade === "success" ? "✓ Meta atingida" : u.grade === "warning" ? "⚠ Próximo" : "✗ Abaixo"}
+          </span>
+        </td>
+      </tr>`;
+    })
+    .join("");
+
+  return `
+    <div style="page-break-before:always;padding-top:8px">
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:20px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Performance</div>
+          <div style="font-size:22px;font-weight:800;color:#FFFFFF">Metas — ${lastMonth}</div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="text-align:center;background:#1D9E7522;border-radius:10px;padding:10px 16px;border:1px solid #1D9E75">
+            <div style="font-size:22px;font-weight:800;color:#1D9E75">${atingiram}</div>
+            <div style="font-size:9px;color:#1D9E75;text-transform:uppercase;font-weight:600">Atingiram</div>
+          </div>
+          <div style="text-align:center;background:#E24B4A22;border-radius:10px;padding:10px 16px;border:1px solid #E24B4A">
+            <div style="font-size:22px;font-weight:800;color:#E24B4A">${naoAtingiram}</div>
+            <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;font-weight:600">Não atingiram</div>
+          </div>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#F9FAFB">
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Unidade</th>
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Regional</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Margem Real</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Meta</th>
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Atingimento</th>
+            <th style="padding:10px 12px;text-align:center;font-size:10px;font-weight:600;color:#6B7280;text-transform:uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      ${
+        semMeta.length > 0
+          ? `
+        <div style="margin-top:16px;padding:12px 16px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB">
+          <p style="font-size:10px;color:#9CA3AF;margin:0">Unidades sem meta definida: ${semMeta.join(", ")}</p>
+        </div>`
+          : ""
+      }
+    </div>`;
+}
+
 export function exportPdf(allData: FinancialRecord[], rhRecords: RhRecord[] = []) {
   const records = filterOutAdm(allData);
   const lastMonth = getLastMonth(records);
@@ -537,6 +807,15 @@ export function exportPdf(allData: FinancialRecord[], rhRecords: RhRecord[] = []
     </div>`
       : ""
   }
+
+  <!-- Evolução 12 meses -->
+  ${evolucaoAnualSection(records, lastMonth)}
+
+  <!-- Comparativo anual -->
+  ${comparativoAnualSection(records, lastMonth)}
+
+  <!-- Metas -->
+  ${metasSection(records, lastMonth)}
 
   <!-- Seção Administrativa -->
   ${admSection(allData, lastMonth)}
