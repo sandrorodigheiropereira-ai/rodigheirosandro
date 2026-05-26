@@ -36,14 +36,14 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 30 18% 93%;
-    --sidebar-foreground: 25 15% 25%;
-    --sidebar-primary: 140 35% 55%;
-    --sidebar-primary-foreground: 140 30% 15%;
-    --sidebar-accent: 24 70% 85%;
-    --sidebar-accent-foreground: 24 40% 20%;
-    --sidebar-border: 30 15% 84%;
-    --sidebar-ring: 140 35% 55%;
+    --sidebar-background: 125 45% 20%;
+    --sidebar-foreground: 120 20% 92%;
+    --sidebar-primary: 120 40% 75%;
+    --sidebar-primary-foreground: 125 45% 12%;
+    --sidebar-accent: 125 40% 28%;
+    --sidebar-accent-foreground: 120 20% 95%;
+    --sidebar-border: 125 35% 28%;
+    --sidebar-ring: 120 40% 60%;
 
     /* Financial semantic tokens */
    --success: 140 65% 45%;
