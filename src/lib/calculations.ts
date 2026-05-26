@@ -1,4 +1,4 @@
-import { FinancialRecord, CalculatedMetrics, Alert } from '@/types/financial';
+import { FinancialRecord, CalculatedMetrics, Alert } from "@/types/financial";
 
 export function calcMetrics(records: FinancialRecord[], prevRecords?: FinancialRecord[]): CalculatedMetrics {
   const receitaBruta = records.reduce((s, r) => s + r.receitaBruta, 0);
@@ -24,10 +24,17 @@ export function calcMetrics(records: FinancialRecord[], prevRecords?: FinancialR
   };
 }
 
-export function generateAlerts(records: FinancialRecord[]): Alert[] {
+export function generateAlerts(
+  records: FinancialRecord[],
+  config?: { cmv_danger?: number; cmv_warning?: number; mdo_danger?: number; mdo_warning?: number },
+): Alert[] {
+  const CMV_DANGER = config?.cmv_danger ?? 50;
+  const CMV_WARNING = config?.cmv_warning ?? 40;
+  const MDO_DANGER = config?.mdo_danger ?? 35;
+  const MDO_WARNING = config?.mdo_warning ?? 30;
   const alerts: Alert[] = [];
-  const byUnidade = groupBy(records, 'unidade');
-  const months = [...new Set(records.map(r => r.data))].sort();
+  const byUnidade = groupBy(records, "unidade");
+  const months = [...new Set(records.map((r) => r.data))].sort();
   const lastMonth = months[months.length - 1];
   const prevMonth = months.length >= 2 ? months[months.length - 2] : null;
 
@@ -36,18 +43,18 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
     const regional = recs[0].regional;
 
     // --- CMV: limites em três faixas ---
-    if (metrics.cmvPercent > 50) {
+    if (metrics.cmvPercent > CMV_DANGER) {
       alerts.push({
-        type: 'danger',
-        message: `CMV crítico: ${metrics.cmvPercent.toFixed(1)}% (limite: 50%)`,
+        type: "danger",
+        message: `CMV crítico: ${metrics.cmvPercent.toFixed(1)}% (limite: ${CMV_DANGER}%)`,
         unidade,
         regional,
         value: metrics.cmvPercent,
       });
-    } else if (metrics.cmvPercent > 40) {
+    } else if (metrics.cmvPercent > CMV_WARNING) {
       alerts.push({
-        type: 'warning',
-        message: `CMV elevado: ${metrics.cmvPercent.toFixed(1)}% (ideal ≤ 40%)`,
+        type: "warning",
+        message: `CMV elevado: ${metrics.cmvPercent.toFixed(1)}% (ideal ≤ ${CMV_WARNING}%)`,
         unidade,
         regional,
         value: metrics.cmvPercent,
@@ -55,18 +62,18 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
     }
 
     // --- Mão de obra: dois níveis ---
-    if (metrics.maoDeObraPercent > 35) {
+    if (metrics.maoDeObraPercent > MDO_DANGER) {
       alerts.push({
-        type: 'danger',
-        message: `Mão de obra crítica: ${metrics.maoDeObraPercent.toFixed(1)}% (limite: 35%)`,
+        type: "danger",
+        message: `Mão de obra crítica: ${metrics.maoDeObraPercent.toFixed(1)}% (limite: ${MDO_DANGER}%)`,
         unidade,
         regional,
         value: metrics.maoDeObraPercent,
       });
-    } else if (metrics.maoDeObraPercent > 30) {
+    } else if (metrics.maoDeObraPercent > MDO_WARNING) {
       alerts.push({
-        type: 'warning',
-        message: `Mão de obra elevada: ${metrics.maoDeObraPercent.toFixed(1)}% (ideal ≤ 30%)`,
+        type: "warning",
+        message: `Mão de obra elevada: ${metrics.maoDeObraPercent.toFixed(1)}% (ideal ≤ ${MDO_WARNING}%)`,
         unidade,
         regional,
         value: metrics.maoDeObraPercent,
@@ -76,7 +83,7 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
     // --- Margem negativa ---
     if (metrics.margem < 0) {
       alerts.push({
-        type: 'danger',
+        type: "danger",
         message: `Margem negativa: ${metrics.margem.toFixed(1)}%`,
         unidade,
         regional,
@@ -90,7 +97,7 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
       const gap = metaVal - metrics.margem;
       if (gap > 5) {
         alerts.push({
-          type: 'warning',
+          type: "warning",
           message: `Meta não atingida: margem ${metrics.margem.toFixed(1)}% vs meta ${metaVal.toFixed(1)}% (gap: ${gap.toFixed(1)}pp)`,
           unidade,
           regional,
@@ -101,13 +108,13 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
 
     // --- Queda de receita mês a mês ---
     if (prevMonth && lastMonth) {
-      const lastRev = recs.filter(r => r.data === lastMonth).reduce((s, r) => s + r.receitaBruta, 0);
-      const prevRev = recs.filter(r => r.data === prevMonth).reduce((s, r) => s + r.receitaBruta, 0);
+      const lastRev = recs.filter((r) => r.data === lastMonth).reduce((s, r) => s + r.receitaBruta, 0);
+      const prevRev = recs.filter((r) => r.data === prevMonth).reduce((s, r) => s + r.receitaBruta, 0);
       if (prevRev > 0) {
         const drop = ((prevRev - lastRev) / prevRev) * 100;
         if (drop > 15) {
           alerts.push({
-            type: 'danger',
+            type: "danger",
             message: `Queda de receita: ${drop.toFixed(1)}% (${prevMonth} → ${lastMonth})`,
             unidade,
             regional,
@@ -115,7 +122,7 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
           });
         } else if (drop > 8) {
           alerts.push({
-            type: 'warning',
+            type: "warning",
             message: `Receita em queda: ${drop.toFixed(1)}% (${prevMonth} → ${lastMonth})`,
             unidade,
             regional,
@@ -127,10 +134,10 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
 
     // --- Receita zero ou ausente no último mês ---
     if (lastMonth) {
-      const lastRev = recs.filter(r => r.data === lastMonth).reduce((s, r) => s + r.receitaBruta, 0);
+      const lastRev = recs.filter((r) => r.data === lastMonth).reduce((s, r) => s + r.receitaBruta, 0);
       if (lastRev === 0 && recs.length > 0) {
         alerts.push({
-          type: 'info',
+          type: "info",
           message: `Sem receita registrada em ${lastMonth}`,
           unidade,
           regional,
@@ -148,30 +155,33 @@ export function generateAlerts(records: FinancialRecord[]): Alert[] {
 }
 
 export function groupBy<T>(arr: T[], key: keyof T): Record<string, T[]> {
-  return arr.reduce((acc, item) => {
-    const k = String(item[key]);
-    (acc[k] = acc[k] || []).push(item);
-    return acc;
-  }, {} as Record<string, T[]>);
+  return arr.reduce(
+    (acc, item) => {
+      const k = String(item[key]);
+      (acc[k] = acc[k] || []).push(item);
+      return acc;
+    },
+    {} as Record<string, T[]>,
+  );
 }
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 export function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
 }
 
-export type RankMetric = 'receitaBruta' | 'margem' | 'ebitda';
+export type RankMetric = "receitaBruta" | "margem" | "ebitda";
 
-export function rankUnidades(records: FinancialRecord[], metric: RankMetric = 'receitaBruta') {
-  const byUnidade = groupBy(records, 'unidade');
+export function rankUnidades(records: FinancialRecord[], metric: RankMetric = "receitaBruta") {
+  const byUnidade = groupBy(records, "unidade");
   const ranked = Object.entries(byUnidade).map(([unidade, recs]) => {
     let value = 0;
-    if (metric === 'receitaBruta') {
+    if (metric === "receitaBruta") {
       value = recs.reduce((s, r) => s + r.receitaBruta, 0);
-    } else if (metric === 'margem') {
+    } else if (metric === "margem") {
       value = recs.reduce((s, r) => s + r.margem, 0) / recs.length;
     } else {
       // EBITDA proxy: Receita Bruta - Despesa Total
@@ -187,7 +197,7 @@ export interface HealthScore {
   unidade: string;
   regional: string;
   score: number;
-  grade: 'green' | 'yellow' | 'red';
+  grade: "green" | "yellow" | "red";
   breakdown: {
     margem: number;
     cmv: number;
@@ -246,28 +256,40 @@ function scoreMeta(margem: number, meta: number): number {
 }
 
 export function calcHealthScores(records: FinancialRecord[]): HealthScore[] {
-  const byUnidade = groupBy(records, 'unidade');
-  return Object.entries(byUnidade).map(([unidade, recs]) => {
-    const m = calcMetrics(recs);
-    const rl = recs.reduce((s, r) => s + r.receitaLiquida, 0);
-    const mdo = recs.reduce((s, r) => s + r.maoDeObra, 0);
-    const mdoPct = rl > 0 ? (mdo / rl) * 100 : 0;
+  const byUnidade = groupBy(records, "unidade");
+  return Object.entries(byUnidade)
+    .map(([unidade, recs]) => {
+      const m = calcMetrics(recs);
+      const rl = recs.reduce((s, r) => s + r.receitaLiquida, 0);
+      const mdo = recs.reduce((s, r) => s + r.maoDeObra, 0);
+      const mdoPct = rl > 0 ? (mdo / rl) * 100 : 0;
 
-    const sM = scoreMargem(m.margem, m.meta);
-    const sCmv = scoreCmv(m.cmvPercent);
-    const sMdo = scoreMaoDeObra(mdoPct);
-    const sMeta = scoreMeta(m.margem, m.meta);
+      const sM = scoreMargem(m.margem, m.meta);
+      const sCmv = scoreCmv(m.cmvPercent);
+      const sMdo = scoreMaoDeObra(mdoPct);
+      const sMeta = scoreMeta(m.margem, m.meta);
 
-    const score = Math.round(sM * 0.35 + sCmv * 0.25 + sMdo * 0.20 + sMeta * 0.20);
-    const grade: HealthScore['grade'] = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red';
+      const score = Math.round(sM * 0.35 + sCmv * 0.25 + sMdo * 0.2 + sMeta * 0.2);
+      const grade: HealthScore["grade"] = score >= 80 ? "green" : score >= 50 ? "yellow" : "red";
 
-    return {
-      unidade,
-      regional: recs[0]?.regional ?? '',
-      score,
-      grade,
-      breakdown: { margem: Math.round(sM), cmv: Math.round(sCmv), maoDeObra: Math.round(sMdo), meta: Math.round(sMeta) },
-      metrics: { margem: m.margem, cmvPercent: m.cmvPercent, maoDeObraPercent: mdoPct, metaAtingida: m.meta > 0 ? (m.margem / m.meta) * 100 : 0 },
-    };
-  }).sort((a, b) => b.score - a.score);
+      return {
+        unidade,
+        regional: recs[0]?.regional ?? "",
+        score,
+        grade,
+        breakdown: {
+          margem: Math.round(sM),
+          cmv: Math.round(sCmv),
+          maoDeObra: Math.round(sMdo),
+          meta: Math.round(sMeta),
+        },
+        metrics: {
+          margem: m.margem,
+          cmvPercent: m.cmvPercent,
+          maoDeObraPercent: mdoPct,
+          metaAtingida: m.meta > 0 ? (m.margem / m.meta) * 100 : 0,
+        },
+      };
+    })
+    .sort((a, b) => b.score - a.score);
 }
