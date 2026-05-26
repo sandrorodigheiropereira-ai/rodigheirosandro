@@ -59,19 +59,9 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        {/* Logo + branding */}
-        <div className={`flex items-center gap-3 p-4 border-b border-sidebar-border/30 ${collapsed ? 'justify-center px-2' : ''}`}>
-          {collapsed ? (
-            <img src="/logo.png" alt="Mais Sabor" className="h-8 w-auto object-contain" />
-          ) : (
-            <>
-              <img src="/logo.png" alt="Mais Sabor" className="h-10 w-auto object-contain shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-sidebar-foreground leading-tight truncate">FinanceHub</p>
-                <p className="text-[10px] text-sidebar-foreground/60 leading-tight truncate">Gestão Financeira</p>
-              </div>
-            </>
-          )}
+        {/* Logo — fundo branco */}
+        <div className={`flex items-center justify-center bg-white border-b border-sidebar-border/30 ${collapsed ? 'p-3' : 'p-4'}`}>
+          <img src="/logo.png" alt="Mais Sabor" className={`object-contain ${collapsed ? 'h-7 w-auto' : 'h-10 w-auto'}`} />
         </div>
 
         <SidebarGroup>
