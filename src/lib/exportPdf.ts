@@ -671,6 +671,7 @@ function metasSection(records: FinancialRecord[], lastMonth: string): string {
 export function exportPdf(allData: FinancialRecord[], rhRecords: RhRecord[] = []) {
   const records = filterOutAdm(allData);
   const lastMonth = getLastMonth(records);
+  console.log('PDF gerado:', lastMonth, records.length);
   const lastMonthRecords = records.filter((r) => r.data === lastMonth);
   const regionais = getRegionais(lastMonthRecords);
   const m = calcMetrics(lastMonthRecords);
