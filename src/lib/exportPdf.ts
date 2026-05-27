@@ -755,8 +755,9 @@ export function exportPdf(allData: FinancialRecord[], rhRecords: RhRecord[] = []
 </body>
 </html>`;
 
-  const win = window.open('', '_blank');
+  const win = window.open('', '_blank', 'width=1200,height=800');
   if (!win) { alert('Permita pop-ups para exportar o PDF.'); return; }
+  console.log('HTML length:', html.length);
   win.document.write(html);
   win.document.close();
 }
