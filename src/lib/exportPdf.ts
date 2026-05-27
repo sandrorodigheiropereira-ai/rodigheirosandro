@@ -598,6 +598,10 @@ export function exportPdf(allData: FinancialRecord[], rhRecords: RhRecord[] = []
   const records = filterOutAdm(allData);
   const lastMonth = getLastMonth(records);
   console.log('PDF gerado v3:', lastMonth, 'registros:', records.length, new Date().toISOString());
+  console.log('Meses disponíveis:', [...new Set(records.map(r => r.data))].sort());
+  console.log('evolucao result length:', evolucaoAnualSection(records, lastMonth).length);
+  console.log('comparativo result length:', comparativoAnualSection(records, lastMonth).length);
+  console.log('metas result length:', metasSection(records, lastMonth).length);
   const lastMonthRecords = records.filter(r => r.data === lastMonth);
   const regionais = getRegionais(lastMonthRecords);
   const m = calcMetrics(lastMonthRecords);
