@@ -151,41 +151,248 @@ export default function RegionalDashboard() {
             onClick={() => {
               const win = window.open('', '_blank', 'width=1200,height=800');
               if (!win) return;
-              const rows = healthScores.map((u, i) => `
+
+              // ----- Dados filtrados para a regional + mês atual -----
+              const allRegionalRecs = allRecords.filter(r => r.regional === regional);
+              const allMonths = [...new Set(allRegionalRecs.map(r => r.data))].filter(Boolean).sort();
+              const currentMonth = allMonths[allMonths.length - 1] || '';
+              const last6Months = allMonths.slice(-6);
+              const monthRecs = allRegionalRecs.filter(r => r.data === currentMonth);
+              const monthMetrics = calcMetrics(monthRecs);
+              const prevMonth = allMonths[allMonths.length - 2];
+              const prevMonthRecs = prevMonth ? allRegionalRecs.filter(r => r.data === prevMonth) : [];
+              const prevMonthMetrics = prevMonth ? calcMetrics(prevMonthRecs) : undefined;
+              const monthAlerts = generateAlerts(monthRecs);
+              const dangerAlerts = monthAlerts.filter(a => a.type === 'danger');
+              const warningAlerts = monthAlerts.filter(a => a.type === 'warning');
+              const monthHealth = calcHealthScores(monthRecs);
+
+              // Evolução últimos 6 meses
+              const evolution = last6Months.map(m => {
+                const recs = allRegionalRecs.filter(r => r.data === m);
+                const mt = calcMetrics(recs);
+                return { mes: m, receita: mt.receitaBruta, margem: mt.margem };
+              });
+              const maxRev = Math.max(...evolution.map(e => e.receita), 1);
+
+              // Metas por unidade (margem atual vs meta)
+              const metasRows = monthHealth.map(u => {
+                const meta = u.metrics.meta || 0;
+                const atual = u.metrics.margem;
+                const atingimento = meta > 0 ? (atual / meta) * 100 : 0;
+                const status = atingimento >= 100 ? { label: 'Atingida', color: '#10b981' }
+                  : atingimento >= 80 ? { label: 'Próxima', color: '#f59e0b' }
+                  : { label: 'Abaixo', color: '#ef4444' };
+                return { unidade: u.unidade, meta, atual, atingimento, status };
+              });
+
+              // RH / Pessoas
+              const rhMonth = allRhRecords.filter(r => r.regional === regional && r.data === currentMonth);
+              const rhByUnit = Object.entries(groupBy(rhMonth, 'unidade')).map(([u, recs]) => {
+                const mdo = recs.reduce((s, r) => s + r.maoDeObra, 0);
+                const he = recs.reduce((s, r) => s + r.horaExtra, 0);
+                const pct = recs.reduce((s, r) => s + r.percentualMdo, 0) / recs.length;
+                const meta = recs.reduce((s, r) => s + r.metaPercentual, 0) / recs.length;
+                const func = recs.reduce((s, r) => s + r.numFuncionarios, 0);
+                return { unidade: u, mdo, he, pct, meta, func };
+              });
+
+              const kpi = (label: string, value: string, delta: string | undefined, color: string) => `
+                <div class="kpi" style="border-top:3px solid ${color}">
+                  <div class="l">${label}</div>
+                  <div class="v">${value}</div>
+                  ${delta ? `<div class="d">${delta}</div>` : ''}
+                </div>`;
+
+              const deltaStr = (cur: number, prev?: number, isPct = false) => {
+                if (prev === undefined || prev === 0) return undefined;
+                const diff = isPct ? cur - prev : ((cur - prev) / prev) * 100;
+                const arrow = diff >= 0 ? '▲' : '▼';
+                const col = diff >= 0 ? '#10b981' : '#ef4444';
+                return `<span style="color:${col}">${arrow} ${Math.abs(diff).toFixed(1)}${isPct ? 'pp' : '%'}</span>`;
+              };
+
+              const alertList = (arr: typeof monthAlerts, type: 'danger' | 'warning') => {
+                if (arr.length === 0) return `<div class="empty">Nenhum alerta ${type === 'danger' ? 'crítico' : 'de atenção'}.</div>`;
+                const bg = type === 'danger' ? '#fee2e2' : '#fef3c7';
+                const bd = type === 'danger' ? '#ef4444' : '#f59e0b';
+                const fg = type === 'danger' ? '#991b1b' : '#92400e';
+                return arr.map(a => `
+                  <div class="alert" style="background:${bg};border-left:4px solid ${bd};color:${fg}">
+                    <span class="badge" style="background:${bd}">${a.unidade}</span>
+                    <span>${a.message}</span>
+                  </div>`).join('');
+              };
+
+              const healthRows = monthHealth.map((u, i) => {
+                const c = u.grade === 'green' ? '#10b981' : u.grade === 'yellow' ? '#f59e0b' : '#ef4444';
+                return `
+                  <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${u.unidade}</strong></td>
+                    <td style="text-align:center;width:200px">
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div style="flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden">
+                          <div style="width:${u.score}%;height:100%;background:${c}"></div>
+                        </div>
+                        <strong style="color:${c};min-width:30px">${u.score}</strong>
+                      </div>
+                    </td>
+                    <td style="text-align:right">${formatPercent(u.metrics.margem)}</td>
+                    <td style="text-align:right">${formatPercent(u.metrics.cmvPercent)}</td>
+                    <td style="text-align:right">${formatPercent(u.metrics.maoDeObraPercent)}</td>
+                  </tr>`;
+              }).join('');
+
+              const evolutionBars = evolution.map(e => {
+                const h = (e.receita / maxRev) * 100;
+                const col = e.margem < 0 ? '#ef4444' : e.margem < 5 ? '#f59e0b' : '#10b981';
+                return `
+                  <div class="bar-col">
+                    <div class="bar-val">${(e.receita / 1000).toFixed(0)}k</div>
+                    <div class="bar-wrap">
+                      <div class="bar" style="height:${h}%;background:${col}"></div>
+                    </div>
+                    <div class="bar-lbl">${e.mes}</div>
+                    <div class="bar-mg" style="color:${col}">${e.margem.toFixed(1)}%</div>
+                  </div>`;
+              }).join('');
+
+              const metasRowsHtml = metasRows.map(m => `
                 <tr>
-                  <td>${i + 1}</td>
-                  <td>${u.unidade}</td>
-                  <td style="text-align:center">${u.score}</td>
-                  <td style="text-align:right">${formatCurrency(filtered.filter(r => r.unidade === u.unidade).reduce((s, r) => s + r.receitaBruta, 0))}</td>
-                  <td style="text-align:right">${formatPercent(u.metrics.margem)}</td>
-                  <td style="text-align:right">${formatPercent(u.metrics.cmvPercent)}</td>
-                  <td style="text-align:right">${formatPercent(u.metrics.maoDeObraPercent)}</td>
-                </tr>
-              `).join('');
-              const html = `<!doctype html><html><head><meta charset="utf-8"><title>Regional ${regional} - ${periodCurrentLabel}</title>
+                  <td><strong>${m.unidade}</strong></td>
+                  <td style="text-align:right">${m.meta.toFixed(1)}%</td>
+                  <td style="text-align:right">${m.atual.toFixed(1)}%</td>
+                  <td style="text-align:right;font-weight:600">${m.atingimento.toFixed(0)}%</td>
+                  <td style="text-align:center">
+                    <span class="badge" style="background:${m.status.color}">${m.status.label}</span>
+                  </td>
+                </tr>`).join('');
+
+              const rhRowsHtml = rhByUnit.length === 0
+                ? `<tr><td colspan="6" style="text-align:center;color:#666;padding:20px">Sem dados de RH para ${currentMonth}.</td></tr>`
+                : rhByUnit.map(r => {
+                  const c = r.pct > r.meta ? '#ef4444' : r.pct > r.meta * 0.9 ? '#f59e0b' : '#10b981';
+                  return `
+                    <tr>
+                      <td><strong>${r.unidade}</strong></td>
+                      <td style="text-align:right">${r.func}</td>
+                      <td style="text-align:right">${formatCurrency(r.mdo)}</td>
+                      <td style="text-align:right">${formatCurrency(r.he)}</td>
+                      <td style="text-align:right;color:${c};font-weight:600">${r.pct.toFixed(1)}%</td>
+                      <td style="text-align:right">${r.meta.toFixed(1)}%</td>
+                    </tr>`;
+                }).join('');
+
+              const html = `<!doctype html><html><head><meta charset="utf-8">
+                <title>Regional ${regional} - ${currentMonth}</title>
                 <style>
-                  body{font-family:-apple-system,Arial,sans-serif;padding:24px;color:#111}
-                  h1{margin:0 0 4px;font-size:22px}
-                  .sub{color:#666;font-size:13px;margin-bottom:20px}
-                  .kpis{display:flex;gap:16px;margin-bottom:24px}
-                  .kpi{flex:1;border:1px solid #ddd;border-radius:8px;padding:12px}
-                  .kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px}
-                  .kpi .v{font-size:20px;font-weight:700;margin-top:4px}
-                  table{width:100%;border-collapse:collapse;font-size:12px}
-                  th,td{border-bottom:1px solid #eee;padding:8px;text-align:left}
-                  th{background:#f5f5f5;text-transform:uppercase;font-size:10px;letter-spacing:.5px}
-                  @media print{button{display:none}}
+                  *{box-sizing:border-box}
+                  body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;margin:0;color:#1f2937;background:#fff}
+                  .cover{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;padding:60px 40px;page-break-after:always}
+                  .cover h1{margin:0;font-size:42px;font-weight:800;letter-spacing:-1px}
+                  .cover h2{margin:8px 0 0;font-size:22px;font-weight:400;color:#94a3b8}
+                  .cover .meta{margin-top:40px;font-size:14px;color:#cbd5e1}
+                  .cover .tag{display:inline-block;background:#3b82f6;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+                  .page{padding:32px 40px}
+                  h2.section{font-size:20px;margin:0 0 16px;color:#0f172a;border-bottom:2px solid #e5e7eb;padding-bottom:8px}
+                  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+                  .kpi{background:#f9fafb;border-radius:8px;padding:14px}
+                  .kpi .l{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+                  .kpi .v{font-size:22px;font-weight:700;margin-top:6px;color:#0f172a}
+                  .kpi .d{font-size:11px;margin-top:4px;font-weight:600}
+                  .alert{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;margin-bottom:6px;font-size:12px}
+                  .badge{display:inline-block;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+                  .empty{padding:12px;color:#6b7280;font-size:12px;background:#f9fafb;border-radius:6px;text-align:center}
+                  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+                  th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left}
+                  th{background:#f3f4f6;text-transform:uppercase;font-size:10px;letter-spacing:.5px;color:#6b7280}
+                  .chart{display:flex;align-items:flex-end;gap:14px;height:220px;padding:16px;background:#f9fafb;border-radius:8px;margin-bottom:24px}
+                  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%}
+                  .bar-val{font-size:10px;color:#6b7280;margin-bottom:4px;font-weight:600}
+                  .bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+                  .bar{width:80%;min-height:4px;border-radius:4px 4px 0 0}
+                  .bar-lbl{font-size:10px;color:#374151;margin-top:6px;font-weight:600}
+                  .bar-mg{font-size:10px;font-weight:700;margin-top:2px}
+                  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+                  @media print{
+                    .cover{page-break-after:always}
+                    .page-break{page-break-before:always}
+                    button{display:none}
+                  }
                 </style></head><body>
-                <h1>Regional: ${regional}</h1>
-                <div class="sub">${periodCurrentLabel}${periodLabel ? ' · ' + periodLabel : ''}</div>
-                <div class="kpis">
-                  <div class="kpi"><div class="l">Receita Total</div><div class="v">${formatCurrency(metrics.receitaBruta)}</div></div>
-                  <div class="kpi"><div class="l">Despesa Total</div><div class="v">${formatCurrency(metrics.despesaTotal)}</div></div>
-                  <div class="kpi"><div class="l">Margem</div><div class="v">${formatPercent(metrics.margem)}</div></div>
+                <div class="cover">
+                  <span class="tag">Relatório Regional</span>
+                  <h1 style="margin-top:18px">${regional}</h1>
+                  <h2>Mês de referência: ${currentMonth}</h2>
+                  <div class="meta">
+                    Receita: <strong style="color:#fff">${formatCurrency(monthMetrics.receitaBruta)}</strong> ·
+                    Margem: <strong style="color:#fff">${formatPercent(monthMetrics.margem)}</strong> ·
+                    Unidades: <strong style="color:#fff">${monthHealth.length}</strong>
+                  </div>
+                  <div class="meta" style="margin-top:30px;font-size:11px;color:#64748b">
+                    Gerado em ${new Date().toLocaleString('pt-BR')}
+                  </div>
                 </div>
-                <h3>Ranking de Unidades</h3>
-                <table><thead><tr><th>#</th><th>Unidade</th><th style="text-align:center">Score</th><th style="text-align:right">Receita</th><th style="text-align:right">Margem</th><th style="text-align:right">CMV</th><th style="text-align:right">MdO</th></tr></thead><tbody>${rows}</tbody></table>
-                <script>window.onload=()=>setTimeout(()=>window.print(),300)</script>
+
+                <div class="page">
+                  <h2 class="section">Indicadores do mês</h2>
+                  <div class="kpis">
+                    ${kpi('Receita Bruta', formatCurrency(monthMetrics.receitaBruta), deltaStr(monthMetrics.receitaBruta, prevMonthMetrics?.receitaBruta), '#3b82f6')}
+                    ${kpi('Despesa Total', formatCurrency(monthMetrics.despesaTotal), deltaStr(monthMetrics.despesaTotal, prevMonthMetrics?.despesaTotal), '#8b5cf6')}
+                    ${kpi('Margem', formatPercent(monthMetrics.margem), deltaStr(monthMetrics.margem, prevMonthMetrics?.margem, true), monthMetrics.margem < 0 ? '#ef4444' : monthMetrics.margem < 5 ? '#f59e0b' : '#10b981')}
+                    ${kpi('CMV', formatPercent(monthMetrics.cmvPercent), deltaStr(monthMetrics.cmvPercent, prevMonthMetrics?.cmvPercent, true), monthMetrics.cmvPercent > 50 ? '#ef4444' : '#10b981')}
+                  </div>
+
+                  <h2 class="section">Alertas críticos</h2>
+                  ${alertList(dangerAlerts, 'danger')}
+
+                  <h2 class="section" style="margin-top:24px">Alertas de atenção</h2>
+                  ${alertList(warningAlerts, 'warning')}
+                </div>
+
+                <div class="page page-break">
+                  <h2 class="section">Evolução — últimos ${evolution.length} meses</h2>
+                  <div class="chart">${evolutionBars}</div>
+
+                  <h2 class="section">Score de saúde por unidade</h2>
+                  <table>
+                    <thead><tr>
+                      <th>#</th><th>Unidade</th><th style="text-align:center">Score</th>
+                      <th style="text-align:right">Margem</th><th style="text-align:right">CMV</th><th style="text-align:right">MdO</th>
+                    </tr></thead>
+                    <tbody>${healthRows}</tbody>
+                  </table>
+                </div>
+
+                <div class="page page-break">
+                  <h2 class="section">Metas por unidade — ${currentMonth}</h2>
+                  <table>
+                    <thead><tr>
+                      <th>Unidade</th>
+                      <th style="text-align:right">Meta</th>
+                      <th style="text-align:right">Atual</th>
+                      <th style="text-align:right">% Atingimento</th>
+                      <th style="text-align:center">Status</th>
+                    </tr></thead>
+                    <tbody>${metasRowsHtml}</tbody>
+                  </table>
+
+                  <h2 class="section" style="margin-top:28px">Pessoas — MdO e Hora Extra</h2>
+                  <table>
+                    <thead><tr>
+                      <th>Unidade</th>
+                      <th style="text-align:right">Funcionários</th>
+                      <th style="text-align:right">MdO Total</th>
+                      <th style="text-align:right">Hora Extra</th>
+                      <th style="text-align:right">% MdO</th>
+                      <th style="text-align:right">Meta</th>
+                    </tr></thead>
+                    <tbody>${rhRowsHtml}</tbody>
+                  </table>
+                </div>
+
+                <script>window.onload=()=>setTimeout(()=>window.print(),400)</script>
                 </body></html>`;
               win.document.write(html);
               win.document.close();
