@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DollarSign, TrendingUp, Percent } from 'lucide-react';
+import { DollarSign, TrendingUp, Percent, FileDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency, formatPercent, rankUnidades, calcHealthScores } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
