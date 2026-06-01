@@ -177,7 +177,8 @@ export default function RegionalDashboard() {
 
               // Metas por unidade (margem atual vs meta)
               const metasRows = monthHealth.map(u => {
-                const meta = u.metrics.meta || 0;
+                const uRecs = monthRecs.filter(r => r.unidade === u.unidade);
+                const meta = uRecs.length > 0 ? uRecs.reduce((s, r) => s + r.meta, 0) / uRecs.length : 0;
                 const atual = u.metrics.margem;
                 const atingimento = meta > 0 ? (atual / meta) * 100 : 0;
                 const status = atingimento >= 100 ? { label: 'Atingida', color: '#10b981' }
