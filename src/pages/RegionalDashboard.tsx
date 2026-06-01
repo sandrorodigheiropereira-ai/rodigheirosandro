@@ -21,7 +21,9 @@ type CompareMode = 'previous-month' | 'previous-window';
 
 export default function RegionalDashboard() {
   const { data: sheetData, isLoading, error } = useSheetData();
+  const { data: rhData } = useRhData();
   const allRecords = useMemo(() => filterOutAdm(sheetData?.data || []), [sheetData]);
+  const allRhRecords = useMemo(() => filterOutAdm(rhData?.data || []), [rhData]);
   const regionais = useMemo(() => getRegionaisFromData(allRecords), [allRecords]);
   const [regional, setRegional] = useState('');
   const [periodo, setPeriodo] = useState<string[]>([]);
