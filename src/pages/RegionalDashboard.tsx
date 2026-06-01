@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DollarSign, TrendingUp, Percent } from 'lucide-react';
+import { DollarSign, TrendingUp, Percent, FileDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/KpiCard';
 import { calcMetrics, groupBy, formatCurrency, formatPercent, rankUnidades, calcHealthScores } from '@/lib/calculations';
 import { filterOutAdm } from '@/lib/constants';
@@ -141,6 +142,54 @@ export default function RegionalDashboard() {
           <p className="text-sm text-muted-foreground">Análise por regional</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const win = window.open('', '_blank', 'width=1200,height=800');
+              if (!win) return;
+              const rows = healthScores.map((u, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${u.unidade}</td>
+                  <td style="text-align:center">${u.score}</td>
+                  <td style="text-align:right">${formatCurrency(filtered.filter(r => r.unidade === u.unidade).reduce((s, r) => s + r.receitaBruta, 0))}</td>
+                  <td style="text-align:right">${formatPercent(u.metrics.margem)}</td>
+                  <td style="text-align:right">${formatPercent(u.metrics.cmvPercent)}</td>
+                  <td style="text-align:right">${formatPercent(u.metrics.maoDeObraPercent)}</td>
+                </tr>
+              `).join('');
+              const html = `<!doctype html><html><head><meta charset="utf-8"><title>Regional ${regional} - ${periodCurrentLabel}</title>
+                <style>
+                  body{font-family:-apple-system,Arial,sans-serif;padding:24px;color:#111}
+                  h1{margin:0 0 4px;font-size:22px}
+                  .sub{color:#666;font-size:13px;margin-bottom:20px}
+                  .kpis{display:flex;gap:16px;margin-bottom:24px}
+                  .kpi{flex:1;border:1px solid #ddd;border-radius:8px;padding:12px}
+                  .kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px}
+                  .kpi .v{font-size:20px;font-weight:700;margin-top:4px}
+                  table{width:100%;border-collapse:collapse;font-size:12px}
+                  th,td{border-bottom:1px solid #eee;padding:8px;text-align:left}
+                  th{background:#f5f5f5;text-transform:uppercase;font-size:10px;letter-spacing:.5px}
+                  @media print{button{display:none}}
+                </style></head><body>
+                <h1>Regional: ${regional}</h1>
+                <div class="sub">${periodCurrentLabel}${periodLabel ? ' · ' + periodLabel : ''}</div>
+                <div class="kpis">
+                  <div class="kpi"><div class="l">Receita Total</div><div class="v">${formatCurrency(metrics.receitaBruta)}</div></div>
+                  <div class="kpi"><div class="l">Despesa Total</div><div class="v">${formatCurrency(metrics.despesaTotal)}</div></div>
+                  <div class="kpi"><div class="l">Margem</div><div class="v">${formatPercent(metrics.margem)}</div></div>
+                </div>
+                <h3>Ranking de Unidades</h3>
+                <table><thead><tr><th>#</th><th>Unidade</th><th style="text-align:center">Score</th><th style="text-align:right">Receita</th><th style="text-align:right">Margem</th><th style="text-align:right">CMV</th><th style="text-align:right">MdO</th></tr></thead><tbody>${rows}</tbody></table>
+                <script>window.onload=()=>setTimeout(()=>window.print(),300)</script>
+                </body></html>`;
+              win.document.write(html);
+              win.document.close();
+            }}
+          >
+            <FileDown className="w-4 h-4 mr-1" /> Exportar PDF
+          </Button>
           <MultiSelectUnidade
             options={meses}
             selected={periodo}
@@ -158,6 +207,7 @@ export default function RegionalDashboard() {
             </SelectContent>
           </Select>
         </div>
+
       </div>
 
       {selectedMonths.length > 1 && (
