@@ -14,6 +14,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DonutChart } from '@/components/DonutChart';
+import { supabase } from '@/integrations/supabase/client';
 
 const PIE_COLORS = ['hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
 
@@ -38,6 +39,26 @@ export default function RegionalDashboard() {
   useEffect(() => {
     if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
+
+  // Logo da empresa (mesmo do CompanyLogo: storage 'branding/logo.jpg', fallback /logo.png)
+  const [logoUrl, setLogoUrl] = useState<string>('/logo.png');
+  useEffect(() => {
+    const { data } = supabase.storage.from('branding').getPublicUrl('logo.jpg');
+    fetch(data.publicUrl, { method: 'HEAD' })
+      .then(r => { if (r.ok) setLogoUrl(data.publicUrl); })
+      .catch(() => {});
+  }, []);
+
+  // Gerentes por regional
+  const [managers, setManagers] = useState<Record<string, string>>({});
+  useEffect(() => {
+    supabase.from('regional_managers').select('regional,nome,ativo').then(({ data }) => {
+      if (!data) return;
+      const map: Record<string, string> = {};
+      data.filter(m => m.ativo !== false).forEach(m => { map[m.regional] = m.nome; });
+      setManagers(map);
+    });
+  }, []);
 
   const filtered = useMemo(
     () => allRecords.filter(r => r.regional === regional && (periodo.length === 0 || periodo.includes(r.data))),
@@ -152,14 +173,17 @@ export default function RegionalDashboard() {
               const win = window.open('', '_blank', 'width=1200,height=800');
               if (!win) return;
 
-              // ----- Dados filtrados para a regional + mês atual -----
+              // ----- Dados filtrados para a regional + mês selecionado -----
               const allRegionalRecs = allRecords.filter(r => r.regional === regional);
               const allMonths = [...new Set(allRegionalRecs.map(r => r.data))].filter(Boolean).sort();
-              const currentMonth = allMonths[allMonths.length - 1] || '';
-              const last6Months = allMonths.slice(-6);
+              // Usa o mês mais recente entre os selecionados; se nenhum, usa o último disponível
+              const selectedSorted = periodo.length > 0 ? [...periodo].sort() : [];
+              const currentMonth = selectedSorted[selectedSorted.length - 1] || allMonths[allMonths.length - 1] || '';
+              const currentIdx = allMonths.indexOf(currentMonth);
+              const last6Months = currentIdx >= 0 ? allMonths.slice(Math.max(0, currentIdx - 5), currentIdx + 1) : allMonths.slice(-6);
               const monthRecs = allRegionalRecs.filter(r => r.data === currentMonth);
               const monthMetrics = calcMetrics(monthRecs);
-              const prevMonth = allMonths[allMonths.length - 2];
+              const prevMonth = currentIdx > 0 ? allMonths[currentIdx - 1] : undefined;
               const prevMonthRecs = prevMonth ? allRegionalRecs.filter(r => r.data === prevMonth) : [];
               const prevMonthMetrics = prevMonth ? calcMetrics(prevMonthRecs) : undefined;
               const monthAlerts = generateAlerts(monthRecs);
@@ -290,11 +314,15 @@ export default function RegionalDashboard() {
                 <style>
                   *{box-sizing:border-box}
                   body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;margin:0;color:#1f2937;background:#fff}
-                  .cover{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;padding:60px 40px;page-break-after:always}
+                  .cover{background:linear-gradient(135deg,#1D9E75 0%,#178a65 100%);color:#fff;padding:60px 40px;page-break-after:always}
+                  .cover .logo{width:80px;height:80px;border-radius:14px;background:#fff;padding:8px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+                  .cover .logo img{max-width:100%;max-height:100%;object-fit:contain}
                   .cover h1{margin:0;font-size:42px;font-weight:800;letter-spacing:-1px}
-                  .cover h2{margin:8px 0 0;font-size:22px;font-weight:400;color:#94a3b8}
-                  .cover .meta{margin-top:40px;font-size:14px;color:#cbd5e1}
-                  .cover .tag{display:inline-block;background:#3b82f6;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+                  .cover h2{margin:8px 0 0;font-size:22px;font-weight:400;color:#d1fae5}
+                  .cover .meta{margin-top:40px;font-size:14px;color:#ecfdf5}
+                  .cover .manager{margin-top:18px;font-size:14px;color:#ecfdf5}
+                  .cover .manager strong{color:#fff;font-size:16px}
+                  .cover .tag{display:inline-block;background:rgba(255,255,255,.18);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;backdrop-filter:blur(4px)}
                   .page{padding:32px 40px}
                   h2.section{font-size:20px;margin:0 0 16px;color:#0f172a;border-bottom:2px solid #e5e7eb;padding-bottom:8px}
                   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
@@ -323,15 +351,19 @@ export default function RegionalDashboard() {
                   }
                 </style></head><body>
                 <div class="cover">
+                  <div class="logo"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"/></div>
                   <span class="tag">Relatório Regional</span>
                   <h1 style="margin-top:18px">${regional}</h1>
                   <h2>Mês de referência: ${currentMonth}</h2>
+                  <div class="manager">
+                    Gerente responsável: <strong>${managers[regional] || '—'}</strong>
+                  </div>
                   <div class="meta">
                     Receita: <strong style="color:#fff">${formatCurrency(monthMetrics.receitaBruta)}</strong> ·
                     Margem: <strong style="color:#fff">${formatPercent(monthMetrics.margem)}</strong> ·
                     Unidades: <strong style="color:#fff">${monthHealth.length}</strong>
                   </div>
-                  <div class="meta" style="margin-top:30px;font-size:11px;color:#64748b">
+                  <div class="meta" style="margin-top:30px;font-size:11px;color:#d1fae5;opacity:.8">
                     Gerado em ${new Date().toLocaleString('pt-BR')}
                   </div>
                 </div>
