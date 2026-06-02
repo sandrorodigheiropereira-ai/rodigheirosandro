@@ -184,7 +184,11 @@ export default function RegionalDashboard() {
             </SelectContent>
           </Select>
           <Button
-            onClick={() => exportPdfRegional(allRecords, regional, allRhRecords)}
+            onClick={() => exportPdfRegional(allRecords, regional, allRhRecords, {
+              selectedMonths: periodo,
+              managerName: managers[regional],
+              logoUrl,
+            })}
             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
           >
             <FileDown className="w-4 h-4" />

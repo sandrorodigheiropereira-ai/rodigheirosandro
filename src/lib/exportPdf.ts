@@ -784,11 +784,26 @@ export function exportPdf(allData: FinancialRecord[], rhRecords: RhRecord[] = []
   win.document.close();
 }
 
-export function exportPdfRegional(allData: FinancialRecord[], regional: string, rhRecords: RhRecord[] = []) {
+interface RegionalPdfOptions {
+  selectedMonths?: string[];
+  managerName?: string;
+  logoUrl?: string;
+}
+
+export function exportPdfRegional(
+  allData: FinancialRecord[],
+  regional: string,
+  rhRecords: RhRecord[] = [],
+  options: RegionalPdfOptions = {},
+) {
   const records = filterOutAdm(allData).filter((r) => r.regional === regional);
   if (records.length === 0) return;
 
-  const lastMonth = getLastMonth(records);
+  const availableMonths = [...new Set(records.map((r) => r.data))].filter(Boolean).sort();
+  const selectedAvailableMonths = (options.selectedMonths ?? [])
+    .filter((month) => availableMonths.includes(month))
+    .sort();
+  const lastMonth = selectedAvailableMonths[selectedAvailableMonths.length - 1] ?? getLastMonth(records);
   const lastMonthRecords = records.filter((r) => r.data === lastMonth);
   const m = calcMetrics(lastMonthRecords);
   const alerts = generateAlerts(lastMonthRecords);
@@ -808,6 +823,8 @@ export function exportPdfRegional(allData: FinancialRecord[], regional: string, 
   const mColor = m.margem < 0 ? "#E24B4A" : m.margem < 5 ? "#EF9F27" : "#1D9E75";
   const cmvColor = m.cmvPercent > 50 ? "#E24B4A" : m.cmvPercent > 40 ? "#EF9F27" : "#1D9E75";
   const metaLabel = "Meta: " + formatPercent(m.meta);
+  const logoUrl = new URL(options.logoUrl || "/logo.png", window.location.origin).href;
+  const managerName = options.managerName?.trim();
 
   const alertasCriticos =
     dangerAlerts.length > 0
@@ -848,13 +865,15 @@ export function exportPdfRegional(allData: FinancialRecord[], regional: string, 
   <div class="no-print" style="text-align:center;padding:12px;background:#1D9E75;color:white;border-radius:8px;margin-bottom:24px;cursor:pointer" onclick="window.print()">
     📄 Salvar como PDF
   </div>
-  <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:16px;padding:48px 40px;margin-bottom:36px;text-align:center">
-    <div style="font-size:13px;color:#9CA3AF;margin-bottom:20px;letter-spacing:0.08em;text-transform:uppercase">Relatório de Gestão Financeira</div>
+  <div style="background:linear-gradient(135deg,#1D9E75 0%,#157C5D 100%);border-radius:16px;padding:42px 40px;margin-bottom:36px;text-align:center">
+    <img src="${logoUrl}" alt="Logo Mais Sabor" style="display:block;width:auto;height:64px;max-width:180px;object-fit:contain;margin:0 auto 22px;background:#FFFFFF;border-radius:14px;padding:10px;box-shadow:0 14px 32px rgba(0,0,0,0.18)" />
+    <div style="font-size:13px;color:rgba(255,255,255,0.78);margin-bottom:18px;letter-spacing:0.08em;text-transform:uppercase">Relatório de Gestão Financeira</div>
     <div style="font-size:28px;font-weight:800;color:#FFFFFF;margin-bottom:8px">${regional}</div>
+    ${managerName ? `<div style="font-size:13px;font-weight:700;color:#FFFFFF;margin-bottom:16px">Gerente responsável: ${managerName}</div>` : ""}
     <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:12px;padding:12px 40px;margin-bottom:20px">
       <div style="font-size:28px;font-weight:800;color:#FFFFFF">${lastMonth}</div>
     </div>
-    <div style="font-size:11px;color:#9CA3AF;margin-top:8px">${today}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.78);margin-top:8px">${today}</div>
   </div>
   ${sectionTitle("Visão da Regional")}
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
