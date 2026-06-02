@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DonutChart } from '@/components/DonutChart';
 import { supabase } from '@/integrations/supabase/client';
+import { exportPdfRegional } from '@/lib/exportPdf';
 
 const PIE_COLORS = ['hsl(210 90% 60%)', 'hsl(38 92% 55%)', 'hsl(280 65% 60%)'];
 
