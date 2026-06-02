@@ -351,15 +351,19 @@ export default function RegionalDashboard() {
                   }
                 </style></head><body>
                 <div class="cover">
+                  <div class="logo"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"/></div>
                   <span class="tag">Relatório Regional</span>
                   <h1 style="margin-top:18px">${regional}</h1>
                   <h2>Mês de referência: ${currentMonth}</h2>
+                  <div class="manager">
+                    Gerente responsável: <strong>${managers[regional] || '—'}</strong>
+                  </div>
                   <div class="meta">
                     Receita: <strong style="color:#fff">${formatCurrency(monthMetrics.receitaBruta)}</strong> ·
                     Margem: <strong style="color:#fff">${formatPercent(monthMetrics.margem)}</strong> ·
                     Unidades: <strong style="color:#fff">${monthHealth.length}</strong>
                   </div>
-                  <div class="meta" style="margin-top:30px;font-size:11px;color:#64748b">
+                  <div class="meta" style="margin-top:30px;font-size:11px;color:#d1fae5;opacity:.8">
                     Gerado em ${new Date().toLocaleString('pt-BR')}
                   </div>
                 </div>
