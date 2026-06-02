@@ -314,11 +314,15 @@ export default function RegionalDashboard() {
                 <style>
                   *{box-sizing:border-box}
                   body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;margin:0;color:#1f2937;background:#fff}
-                  .cover{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;padding:60px 40px;page-break-after:always}
+                  .cover{background:linear-gradient(135deg,#1D9E75 0%,#178a65 100%);color:#fff;padding:60px 40px;page-break-after:always}
+                  .cover .logo{width:80px;height:80px;border-radius:14px;background:#fff;padding:8px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+                  .cover .logo img{max-width:100%;max-height:100%;object-fit:contain}
                   .cover h1{margin:0;font-size:42px;font-weight:800;letter-spacing:-1px}
-                  .cover h2{margin:8px 0 0;font-size:22px;font-weight:400;color:#94a3b8}
-                  .cover .meta{margin-top:40px;font-size:14px;color:#cbd5e1}
-                  .cover .tag{display:inline-block;background:#3b82f6;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+                  .cover h2{margin:8px 0 0;font-size:22px;font-weight:400;color:#d1fae5}
+                  .cover .meta{margin-top:40px;font-size:14px;color:#ecfdf5}
+                  .cover .manager{margin-top:18px;font-size:14px;color:#ecfdf5}
+                  .cover .manager strong{color:#fff;font-size:16px}
+                  .cover .tag{display:inline-block;background:rgba(255,255,255,.18);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;backdrop-filter:blur(4px)}
                   .page{padding:32px 40px}
                   h2.section{font-size:20px;margin:0 0 16px;color:#0f172a;border-bottom:2px solid #e5e7eb;padding-bottom:8px}
                   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
