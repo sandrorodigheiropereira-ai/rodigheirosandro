@@ -40,6 +40,26 @@ export default function RegionalDashboard() {
     if (regionais.length > 0 && !regional) setRegional(regionais[0]);
   }, [regionais]);
 
+  // Logo da empresa (mesmo do CompanyLogo: storage 'branding/logo.jpg', fallback /logo.png)
+  const [logoUrl, setLogoUrl] = useState<string>('/logo.png');
+  useEffect(() => {
+    const { data } = supabase.storage.from('branding').getPublicUrl('logo.jpg');
+    fetch(data.publicUrl, { method: 'HEAD' })
+      .then(r => { if (r.ok) setLogoUrl(data.publicUrl); })
+      .catch(() => {});
+  }, []);
+
+  // Gerentes por regional
+  const [managers, setManagers] = useState<Record<string, string>>({});
+  useEffect(() => {
+    supabase.from('regional_managers').select('regional,nome,ativo').then(({ data }) => {
+      if (!data) return;
+      const map: Record<string, string> = {};
+      data.filter(m => m.ativo !== false).forEach(m => { map[m.regional] = m.nome; });
+      setManagers(map);
+    });
+  }, []);
+
   const filtered = useMemo(
     () => allRecords.filter(r => r.regional === regional && (periodo.length === 0 || periodo.includes(r.data))),
     [regional, periodo, allRecords]
