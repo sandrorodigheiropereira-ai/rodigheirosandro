@@ -173,14 +173,17 @@ export default function RegionalDashboard() {
               const win = window.open('', '_blank', 'width=1200,height=800');
               if (!win) return;
 
-              // ----- Dados filtrados para a regional + mês atual -----
+              // ----- Dados filtrados para a regional + mês selecionado -----
               const allRegionalRecs = allRecords.filter(r => r.regional === regional);
               const allMonths = [...new Set(allRegionalRecs.map(r => r.data))].filter(Boolean).sort();
-              const currentMonth = allMonths[allMonths.length - 1] || '';
-              const last6Months = allMonths.slice(-6);
+              // Usa o mês mais recente entre os selecionados; se nenhum, usa o último disponível
+              const selectedSorted = periodo.length > 0 ? [...periodo].sort() : [];
+              const currentMonth = selectedSorted[selectedSorted.length - 1] || allMonths[allMonths.length - 1] || '';
+              const currentIdx = allMonths.indexOf(currentMonth);
+              const last6Months = currentIdx >= 0 ? allMonths.slice(Math.max(0, currentIdx - 5), currentIdx + 1) : allMonths.slice(-6);
               const monthRecs = allRegionalRecs.filter(r => r.data === currentMonth);
               const monthMetrics = calcMetrics(monthRecs);
-              const prevMonth = allMonths[allMonths.length - 2];
+              const prevMonth = currentIdx > 0 ? allMonths[currentIdx - 1] : undefined;
               const prevMonthRecs = prevMonth ? allRegionalRecs.filter(r => r.data === prevMonth) : [];
               const prevMonthMetrics = prevMonth ? calcMetrics(prevMonthRecs) : undefined;
               const monthAlerts = generateAlerts(monthRecs);
