@@ -133,9 +133,17 @@ export default function AdminDashboard() {
   const saveAllLimits = async () => {
     const keys = ["cmv_danger", "cmv_warning", "mdo_danger", "mdo_warning", "adm_limit"];
     for (const key of keys) {
-      await supabase
+      const { error } = await supabase
         .from("system_config")
-        .upsert({ key, value: config[key] ?? "", updated_at: new Date().toISOString() });
+        .upsert(
+          { key, value: config[key] ?? "", updated_at: new Date().toISOString() },
+          { onConflict: "key" },
+        );
+      if (error) {
+        console.error("saveAllLimits error", key, error);
+        showToast(`Erro ao salvar ${key}: ${error.message}`, "error");
+        return;
+      }
     }
     showToast("Limites salvos com sucesso!");
   };
@@ -143,9 +151,17 @@ export default function AdminDashboard() {
   const saveAllConfig = async () => {
     const keys = ["system_name", "email_day"];
     for (const key of keys) {
-      await supabase
+      const { error } = await supabase
         .from("system_config")
-        .upsert({ key, value: config[key] ?? "", updated_at: new Date().toISOString() });
+        .upsert(
+          { key, value: config[key] ?? "", updated_at: new Date().toISOString() },
+          { onConflict: "key" },
+        );
+      if (error) {
+        console.error("saveAllConfig error", key, error);
+        showToast(`Erro ao salvar ${key}: ${error.message}`, "error");
+        return;
+      }
     }
     showToast("Configurações salvas!");
   };
